@@ -3,11 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "tsx watch --env-file=../.env src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc",
-    "start": "node dist/index.js",
+    "start": "node --env-file-if-exists=../.env dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "seed": "tsx --env-file-if-exists=../.env src/db/seed/seed.ts"
@@ -22,6 +26,7 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.22.0",
+    "prisma": "^7.9.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -31,8 +36,6 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.13.3",
     "@types/pg": "^8.20.0",
-    "dotenv": "^17.4.2",
-    "prisma": "^7.9.1",
     "tsx": "^4.23.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
