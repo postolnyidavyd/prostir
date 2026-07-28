@@ -20,3 +20,9 @@ npm-debug.log*
 
 # prisma
 api/src/db/*.db
+
+# prisma generated client
+api/src/db/generated/
+
+CLAUDE.md
+.claude/
