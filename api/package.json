@@ -14,6 +14,7 @@
     "start": "node --env-file-if-exists=../.env dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:db": "vitest run --config vitest.config.db.ts",
     "seed": "tsx --env-file-if-exists=../.env src/db/seed/seed.ts"
   },
   "dependencies": {

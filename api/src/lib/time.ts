@@ -1,0 +1,72 @@
+import { formatInTimeZone } from 'date-fns-tz';
+
+const KYIV_TIME_ZONE = 'Europe/Kyiv';
+const SLOT_MINUTES = 30;
+const MIN_DURATION_MINUTES = 30;
+const MAX_DURATION_MINUTES = 240;
+const WORK_START_MINUTES = 9 * 60;
+const WORK_END_MINUTES = 19 * 60;
+
+const MS_IN_MINUTE = 60_000;
+
+export type IntervalIssue = 'NOT_ALIGNED' | 'BAD_DURATION' | 'OUTSIDE_WORKING_HOURS' | 'IN_PAST';
+
+export type IntervalCheck = { ok: true } | { ok: false; reason: IntervalIssue };
+
+
+function isAlignedToSlot(date: Date): boolean {
+  return date.getTime() % (SLOT_MINUTES * MS_IN_MINUTE) === 0;
+}
+
+function hasAllowedDuration(startsAt: Date, endsAt: Date): boolean {
+  const minutes = (endsAt.getTime() - startsAt.getTime()) / MS_IN_MINUTE;
+  return minutes >= MIN_DURATION_MINUTES && minutes <= MAX_DURATION_MINUTES;
+}
+
+function toKyivDayAndMinutes(date: Date): { day: string; minutes: number } {
+  // yyyy-MM-dd HH:mm є фіксованим тому використання slice це мікро оптимізація(вау зекономив кілька байт пам'яті)
+  const stamp = formatInTimeZone(date, KYIV_TIME_ZONE, 'yyyy-MM-dd HH:mm');
+
+  return {
+    day: stamp.slice(0, 10),
+    minutes: Number(stamp.slice(11, 13)) * 60 + Number(stamp.slice(14, 16)),
+  };
+}
+
+// Звірка дня обов'язкова потрібно щоб не проходили кейси по типу 00:00 < 19:00
+function isWithinWorkingHours(startsAt: Date, endsAt: Date): boolean {
+  const start = toKyivDayAndMinutes(startsAt);
+  const end = toKyivDayAndMinutes(endsAt);
+
+  return (
+    start.day === end.day &&
+    start.minutes >= WORK_START_MINUTES &&
+    end.minutes <= WORK_END_MINUTES
+  );
+}
+
+export function isInFuture(date: Date, now: Date): boolean {
+  return date.getTime() > now.getTime();
+}
+
+
+
+export function validateBookingInterval(startsAt: Date, endsAt: Date, now: Date): IntervalCheck {
+  if (!isAlignedToSlot(startsAt) || !isAlignedToSlot(endsAt)) {
+    return { ok: false, reason: 'NOT_ALIGNED' };
+  }
+
+  if (!hasAllowedDuration(startsAt, endsAt)) {
+    return { ok: false, reason: 'BAD_DURATION' };
+  }
+
+  if (!isWithinWorkingHours(startsAt, endsAt)) {
+    return { ok: false, reason: 'OUTSIDE_WORKING_HOURS' };
+  }
+
+  if (!isInFuture(startsAt, now)) {
+    return { ok: false, reason: 'IN_PAST' };
+  }
+
+  return { ok: true };
+}
