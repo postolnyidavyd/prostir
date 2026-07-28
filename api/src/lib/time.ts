@@ -9,6 +9,29 @@ const WORK_END_MINUTES = 19 * 60;
 
 const MS_IN_MINUTE = 60_000;
 
+const DURATION_UNITS = {
+  ms: 1,
+  s: 1_000,
+  m: MS_IN_MINUTE,
+  h: 60 * MS_IN_MINUTE,
+  d: 24 * 60 * MS_IN_MINUTE,
+} as const;
+
+type DurationUnit = keyof typeof DURATION_UNITS;
+
+// формат той самий що і jwt - 15m, 24h, 7d
+export function expiresAt(now: Date, duration: string): Date {
+  const match = /^(\d+)(ms|s|m|h|d)$/.exec(duration);
+  const amount = Number(match?.[1]);
+  const unit = match?.[2] as DurationUnit | undefined;
+
+  if (!unit || Number.isNaN(amount)) {
+    throw new Error(`Некоректний формат тривалості: ${duration}`);
+  }
+
+  return new Date(now.getTime() + amount * DURATION_UNITS[unit]);
+}
+
 export type IntervalIssue = 'NOT_ALIGNED' | 'BAD_DURATION' | 'OUTSIDE_WORKING_HOURS' | 'IN_PAST';
 
 export type IntervalCheck = { ok: true } | { ok: false; reason: IntervalIssue };
