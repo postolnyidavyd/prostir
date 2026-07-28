@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isInFuture, validateBookingInterval } from '../../src/lib/time.js';
+import { expiresAt, isInFuture, validateBookingInterval } from '../../src/lib/time.js';
 
 const NOW = new Date('2026-07-28T00:00:00Z');
 
@@ -126,6 +126,21 @@ it('при кількох порушеннях повертається стру
   expect(check('2026-07-27T22:15:00Z', '2026-07-27T23:15:00Z')).toEqual({
     ok: false,
     reason: 'NOT_ALIGNED',
+  });
+});
+
+describe('expiresAt', () => {
+  const now = new Date('2026-08-03T07:00:00Z');
+
+  it('хвилини, години, дні', () => {
+    expect(expiresAt(now, '15m').toISOString()).toBe('2026-08-03T07:15:00.000Z');
+    expect(expiresAt(now, '24h').toISOString()).toBe('2026-08-04T07:00:00.000Z');
+    expect(expiresAt(now, '7d').toISOString()).toBe('2026-08-10T07:00:00.000Z');
+  });
+
+  it('невідомий формат - помилка', () => {
+    expect(() => expiresAt(now, 'тиждень')).toThrow();
+    expect(() => expiresAt(now, '7')).toThrow();
   });
 });
 
