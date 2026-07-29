@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 
 import { prisma } from '../db/client.js';
+import { isUniqueViolation } from '../db/errors.js';
 import { AppError } from '../lib/errors.js';
 import type { LoginInput, RegisterInput } from '../schemas/auth.js';
 import {
@@ -33,10 +34,6 @@ export type Session = {
   refreshToken: string;
 };
 
-function isUniqueEmailError(error: unknown): boolean {
-  return (error as { code?: string }).code === 'P2002';
-}
-
 export async function register(input: RegisterInput, meta: SessionMeta): Promise<Session> {
   try {
     const user = await prisma.user.create({
@@ -56,7 +53,7 @@ export async function register(input: RegisterInput, meta: SessionMeta): Promise
     };
   } catch (error) {
     // унікальність email лишається за базою, окрема перевірка не працює при  race condition
-    if (isUniqueEmailError(error)) {
+    if (isUniqueViolation(error)) {
       throw new AppError(409, 'Користувач з таким email уже існує');
     }
 

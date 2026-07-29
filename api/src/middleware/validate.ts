@@ -3,10 +3,10 @@ import { z } from 'zod';
 
 import { ValidationError } from '../lib/errors.js';
 
-export type RequestSchemas = {
-  body?: z.ZodType;
-  query?: z.ZodType;
-  params?: z.ZodType;
+export type RequestSchemas<Body, Query, Params> = {
+  body?: z.ZodType<Body>;
+  query?: z.ZodType<Query>;
+  params?: z.ZodType<Params>;
 };
 
 const PARTS = ['body', 'query', 'params'] as const;
@@ -21,7 +21,11 @@ type RequestPart = (typeof PARTS)[number];
 // 1)контролери читають звичні req.body, req.query, req.params і працюють дженерики express
 // 2) defineProperty не чіпає ні код express, ні його прототип,
 // власна властивість перекриває гетер лише на цьому екземплярі запиту
-function writeBack(req: Request, part: RequestPart, data: unknown): void {
+function writeBack(
+  req: Request<unknown, unknown, unknown, unknown>,
+  part: RequestPart,
+  data: unknown,
+): void {
   if (part === 'query') {
     Object.defineProperty(req, 'query', { value: data, writable: true, configurable: true });
     return;
@@ -32,11 +36,15 @@ function writeBack(req: Request, part: RequestPart, data: unknown): void {
     return;
   }
 
-  req.params = data as Request['params'];
+  req.params = data;
 }
 
 // розібрані дані повертаються в запит, бо zod їх перетворює. Якщо помилка передає мідлварці
-export function validate(schemas: RequestSchemas): RequestHandler {
+// без дженериків validate повертав RequestHandler зі стандартними типами req.query - ParsedQs,
+// а контролер бронювань очікує дати; express вимагає однакові типи в усіх обробниках роуту
+export function validate<Body = unknown, Query = unknown, Params = unknown>(
+  schemas: RequestSchemas<Body, Query, Params>,
+): RequestHandler<Params, unknown, Body, Query> {
   return (req, _res, next) => {
     const fieldErrors: Record<string, string[]> = {};
 

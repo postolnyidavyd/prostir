@@ -17,7 +17,7 @@ export function authGuard(req: Request, _res: Response, next: NextFunction): voi
 }
 
 // щоб контролери не писали req.user! на кожному запиті
-export function requireUserId(req: Request): string {
+export function requireUserId(req: Pick<Request, 'user'>): string {
   if (!req.user) {
     throw new AppError(401, 'Потрібна автентифікація');
   }
