@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:db": "vitest run --config vitest.config.db.ts",
-    "seed": "tsx --env-file-if-exists=../.env src/db/seed/seed.ts"
+    "seed": "tsx --env-file-if-exists=../.env src/db/seed/seed.ts",
+    "seed:dist": "node --env-file-if-exists=../.env dist/db/seed/seed.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",

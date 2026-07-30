@@ -1,0 +1,15 @@
+
+node_modules
+
+dist
+
+src/db/generated
+
+tests
+vitest.config.ts
+vitest.config.db.ts
+
+.env
+*.log
+Dockerfile
+.dockerignore
