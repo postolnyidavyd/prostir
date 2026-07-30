@@ -1,7 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Provider } from 'react-redux';
+import { Toaster } from 'sonner';
 
 import { App } from './App.tsx';
+import store from './store/store.ts';
 import './fonts.css';
 import './index.css';
 
@@ -13,6 +16,9 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <Provider store={store}>
+      <App />
+      <Toaster position="top-right" />
+    </Provider>
   </StrictMode>,
 );
