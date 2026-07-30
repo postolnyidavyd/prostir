@@ -26,3 +26,6 @@ api/src/db/generated/
 
 CLAUDE.md
 .claude/
+
+
+*.tsbuildinfo
