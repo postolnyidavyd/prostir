@@ -114,6 +114,60 @@ describe('GET /rooms', () => {
     expect(response.status).toBe(200);
     expect(response.body.rooms.length).toBeGreaterThanOrEqual(2);
   });
+
+  it('без вікна поля available немає', async () => {
+    const response = await request(app).get('/rooms').set('Authorization', `Bearer ${ownerToken}`);
+
+    expect(response.body.rooms[0]).not.toHaveProperty('available');
+  });
+
+  it('з вікном кожна кімната має available; зайнята позначена', async () => {
+    const times = slot(0);
+    await book(ownerToken, roomAId, times);
+
+    const response = await request(app)
+      .get(`/rooms?from=${times.startsAt}&to=${times.endsAt}`)
+      .set('Authorization', `Bearer ${ownerToken}`);
+
+    const rooms: { id: string; available: boolean }[] = response.body.rooms;
+    expect(rooms.every((room) => typeof room.available === 'boolean')).toBe(true);
+    expect(rooms.find((room) => room.id === roomAId)?.available).toBe(false);
+    expect(rooms.find((room) => room.id === roomBId)?.available).toBe(true);
+  });
+
+  it('впритул до вікна не робить кімнату зайнятою', async () => {
+    await book(ownerToken, roomAId, slot(0));
+
+    const next = slot(60);
+    const response = await request(app)
+      .get(`/rooms?from=${next.startsAt}&to=${next.endsAt}`)
+      .set('Authorization', `Bearer ${ownerToken}`);
+
+    expect(
+      response.body.rooms.find((room: { id: string }) => room.id === roomAId).available,
+    ).toBe(true);
+  });
+
+  it('onlyFree приховує зайняті', async () => {
+    const times = slot(0);
+    await book(ownerToken, roomAId, times);
+
+    const response = await request(app)
+      .get(`/rooms?from=${times.startsAt}&to=${times.endsAt}&onlyFree=true`)
+      .set('Authorization', `Bearer ${ownerToken}`);
+
+    const ids = response.body.rooms.map((room: { id: string }) => room.id);
+    expect(ids).not.toContain(roomAId);
+    expect(ids).toContain(roomBId);
+  });
+
+  it('from без to - 400', async () => {
+    const response = await request(app)
+      .get('/rooms?from=2026-08-03T07:00:00.000Z')
+      .set('Authorization', `Bearer ${ownerToken}`);
+
+    expect(response.status).toBe(400);
+  });
 });
 
 describe('POST /bookings', () => {
