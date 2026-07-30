@@ -4,7 +4,7 @@ import type { FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { logout, setAccessToken } from '../authSlice';
 import type { RootState } from '../store';
 
-// бекенд віддає з кореня, без /api
+
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL,
   credentials: 'include',
@@ -19,14 +19,11 @@ const rawBaseQuery = fetchBaseQuery({
 
 type RefreshResponse = { accessToken: string };
 
-// на публічних auth-роутах 401 — нормальна доменна відповідь (невірний пароль),
-// а не протухлий токен: перехоплювач їх не чіпає, інакше login ловив би розлогін
+
 const AUTH_PATHS = ['/auth/login', '/auth/register'];
 
-// один спільний проміс refresh: паралельні 401 не запускають кілька ротацій
+// один спільний проміс refresh, ідемпотентність
 let refreshPromise: Promise<{ data?: unknown }> | null = null;
-
-
 
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
   args,
