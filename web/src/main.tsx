@@ -1,9 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
-import { Toaster } from 'sonner';
 
 import { App } from './App.tsx';
+import Toaster from './components/ui/Toaster.tsx';
 import store from './store/store.ts';
 import './fonts.css';
 import './index.css';
@@ -18,7 +18,7 @@ createRoot(root).render(
   <StrictMode>
     <Provider store={store}>
       <App />
-      <Toaster position="top-right" />
+      <Toaster />
     </Provider>
   </StrictMode>,
 );

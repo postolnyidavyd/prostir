@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery, type BaseQueryFn } from '@reduxjs/toolkit/query/react';
 import type { FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 
-import { logout, setAccessToken } from '../authSlice';
+import { logout, selectAccessToken, setAccessToken } from '../authSlice';
 import type { RootState } from '../store';
 
 
@@ -9,7 +9,7 @@ const rawBaseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL,
   credentials: 'include',
   prepareHeaders: (headers, { getState }) => {
-    const token = (getState() as RootState).auth.accessToken;
+    const token = selectAccessToken(getState() as RootState);
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
     }

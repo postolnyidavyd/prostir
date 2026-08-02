@@ -45,7 +45,16 @@ const authSlice = createSlice({
       return anonymous;
     },
   },
+  selectors: {
+    selectAuthStatus: (state) => state.status,
+    selectAccessToken: (state) => state.accessToken,
+    selectCurrentUser: (state) => state.user,
+    selectIsAuthenticated: (state) => state.status === 'authenticated',
+  },
 });
 
 export const { setAccessToken, setCredentials, setUser, setAnonymous, logout } = authSlice.actions;
+export const { selectAuthStatus, selectAccessToken, selectCurrentUser, selectIsAuthenticated } =
+  authSlice.selectors;
+
 export default authSlice.reducer;
