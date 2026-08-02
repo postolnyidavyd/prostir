@@ -1,0 +1,212 @@
+:root {
+  /* Простір — акцент і база (Figma) */
+  --accent-color: #eef3f2;
+  --accent-color-border-hover: #d7e3e1;
+  --accent-color-intense: #84a19b;
+  --primary-black: #0d0d0d;
+  --primary-grey: #f7f7f7;
+  --secondary-grey: #f3f4fb;
+  --grey-border: #f9f9f9;
+  --secondary-text: #6b6b6b;
+  --shadow-sm: 0px 1px 2px -1px #00000014, 0px 1px 3px 0px #00000014;
+
+  /* Color styles */
+  --accent-color-hover: rgba(255, 255, 255, 0.1);
+  --base-white: rgba(255, 255, 255, 1);
+  --base-black: rgba(0, 0, 0, 1);
+  --base-bright-grey: rgba(231, 238, 243, 1);
+  --base-very-bright-grey: rgba(244, 247, 249, 1);
+  --base-secondary-text: rgba(0, 0, 0, 1);
+  --gorse-100: rgba(255, 219, 77, 1);
+  --gorse-80: rgba(255, 226, 112, 1);
+  --gorse-60: rgba(254, 233, 148, 1);
+  --gorse-40: rgba(255, 240, 183, 1);
+  --gorse-20: rgba(255, 247, 219, 1);
+  --yellow-green-100: rgba(215, 246, 77, 1);
+  --yellow-green-80: rgba(223, 247, 112, 1);
+  --yellow-green-60: rgba(230, 249, 148, 1);
+  --yellow-green-40: rgba(239, 251, 183, 1);
+  --yellow-green-20: rgba(247, 253, 219, 1);
+  --lima--100: rgba(137, 219, 51, 1);
+  --lima--80: rgba(160, 226, 91, 1);
+  --lima--60: rgba(184, 233, 132, 1);
+  --lima--40: rgba(207, 240, 173, 1);
+  --lima--20: rgba(231, 247, 214, 1);
+  --malachite-100: rgba(4, 198, 93, 1);
+  --malachite-80: rgba(54, 209, 125, 1);
+  --malachite-60: rgba(104, 220, 157, 1);
+  --malachite-40: rgba(154, 232, 190, 1);
+  --malachite-20: rgba(204, 243, 222, 1);
+  --radiance-100: rgba(0, 126, 255, 1);
+  --radiance-80: rgba(51, 151, 255, 1);
+  --radiance-60: rgba(102, 177, 254, 1);
+  --radiance-40: rgba(153, 203, 255, 1);
+  --radiance-20: rgba(204, 229, 255, 1);
+  --dodger-blue-100: rgba(91, 90, 255, 1);
+  --dodger-blue-80: rgba(123, 123, 255, 1);
+  --dodger-blue-60: rgba(156, 156, 254, 1);
+  --dodger-blue-40: rgba(189, 189, 255, 1);
+  --dodger-blue-20: rgba(222, 222, 255, 1);
+  --violet-100: rgba(170, 43, 142, 1);
+  --violet-80: rgba(187, 85, 164, 1);
+  --violet-60: rgba(204, 127, 187, 1);
+  --violet-40: rgba(221, 170, 209, 1);
+  --violet-20: rgba(238, 212, 232, 1);
+  --brick-red-100: rgba(204, 46, 79, 1);
+  --brick-red-80: rgba(214, 87, 114, 1);
+  --brick-red-60: rgba(224, 129, 149, 1);
+  --brick-red-40: rgba(234, 171, 184, 1);
+  --brick-red-20: rgba(244, 213, 219, 1);
+  --scarlet-100: rgba(255, 56, 0, 1);
+  --scarlet-80: rgba(255, 95, 51, 1);
+  --scarlet-60: rgba(254, 135, 102, 1);
+  --scarlet-40: rgba(255, 175, 153, 1);
+  --scarlet-20: rgba(255, 215, 204, 1);
+  --pumpkin-100: rgba(255, 131, 26, 1);
+  --pumpkin-80: rgba(255, 155, 71, 1);
+  --pumpkin-60: rgba(254, 180, 117, 1);
+  --pumpkin-40: rgba(255, 205, 163, 1);
+  --pumpkin-20: rgba(255, 230, 209, 1);
+  --grey-100: rgba(149, 149, 149, 1);
+  --grey-80: rgba(170, 170, 170, 1);
+  --grey-60: rgba(191, 191, 191, 1);
+  --grey-40: rgba(213, 213, 213, 1);
+  --grey-20: rgba(234, 234, 234, 1);
+
+  /* Gradient styles */
+  --gradient-yellow-green-radiance: linear-gradient(90deg, #d7f64dff 0%, #007effff 100%);
+  --gradient-malachite-dodger-blue: linear-gradient(90deg, #04c65dff 0%, #5b5affff 100%);
+  --gradient-dodger-blue-violet: linear-gradient(90deg, #007effff 0%, #aa2b8eff 100%);
+  --gradient-scarlet-pumpkin: linear-gradient(90deg, #ff3800ff 0%, #ffdb4dff 100%);
+  --gradient-pumpkin-yellow-green: linear-gradient(90deg, #ff831aff 0%, #d7f64dff 100%);
+  --gradient-hover: linear-gradient(
+    24.4deg,
+    #c3aab2ff 0%,
+    #a3dec6ff 21%,
+    #95d7c8ff 43%,
+    #89d1caff 67%,
+    #4b8bfaff 100%
+  );
+  --gradient-radial: radial-gradient(
+    circle,
+    #a6c7bbff 0%,
+    #c1beb3ff 8%,
+    #e4b4a9ff 24%,
+    #e7b2a9ff 41%,
+    #e9b2bcff 58%,
+    #9086b7ff 72%,
+    #7271bdff 83%,
+    #4a54c6ff 90%,
+    #2833d0ff 100%
+  );
+
+  /* Shadow styles */
+  --shadow-default: 0px 3px 5px 0px #00000033;
+  /* Text-size styles */
+  /* base size: desktop-base-body (16px) */
+  --desktop-headings-display: 7.94rem;
+  --desktop-headings-h1: 3.5rem;
+  --desktop-headings-h2: 2.38rem;
+  --desktop-headings-h3: 1.75rem;
+  --desktop-headings-h4: 1.5rem;
+  --desktop-headings-h5: 1.25rem;
+  --desktop-headings-h6: 1.13rem;
+  --desktop-headings-h7: 1rem;
+  --desktop-headings-h8: 0.81rem;
+  --desktop-headings-h9: 0.75rem;
+  --desktop-base-body: 1rem;
+  --desktop-base-small: 0.81rem;
+  --desktop-base-tiny: 0.75rem;
+  --desktop-special-underline-1: 1.13rem;
+  --desktop-special-underline-2: 1rem;
+  --desktop-special-underline-3: 0.81rem;
+  --desktop-special-quote: 1.25rem;
+  --mobile-headings-h1: 1.63rem;
+  --mobile-headings-h2: 1.25rem;
+  --mobile-headings-h3: 1.13rem;
+  --mobile-headings-h4: 1rem;
+  --mobile-headings-h5: 0.88rem;
+  --mobile-headings-h6: 0.81rem;
+  --mobile-headings-h7: 0.81rem;
+  --mobile-base-body: 0.69rem;
+  --mobile-base-small: 0.63rem;
+
+  /* Effect styles */
+  --shadow: 0px 3px 5px rgba(0, 0, 0, 0.2);
+
+  /* Font styles */
+  --text-desktop-h1: 400 var(--desktop-headings-h1)/60px 'e-Ukraine';
+  --text-desktop-body: 300 var(--desktop-base-body)/24px 'e-Ukraine';
+  --text-mobile-h1: 400 var(--mobile-headings-h1)/28px 'e-Ukraine';
+  --text-mobile-body: 400 var(--mobile-base-body)/14px 'e-Ukraine';
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'e-Ukraine', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[data-sonner-toaster] {
+  --normal-bg: var(--base-white);
+  --normal-border: var(--grey-40);
+  --normal-text: var(--base-black);
+
+  --success-bg: var(--malachite-20);
+  --success-border: var(--malachite-100);
+  --success-text: var(--malachite-100);
+
+  --error-bg: var(--brick-red-20);
+  --error-border: var(--brick-red-100);
+  --error-text: var(--brick-red-100);
+
+  --warning-bg: var(--pumpkin-20);
+  --warning-border: var(--pumpkin-100);
+  --warning-text: var(--pumpkin-100);
+
+  --info-bg: var(--radiance-20);
+  --info-border: var(--radiance-100);
+  --info-text: var(--radiance-100);
+}
+
+[data-sonner-toast] {
+  border-radius: 12px !important;
+  font-family: 'e-Ukraine', sans-serif !important;
+  box-shadow: var(--shadow) !important;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  outline: none;
+}
+button {
+  font-family: inherit;
+}
+
+/* GLOBAL CUSTOM SCROLLBAR */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px; /* Для горизонтального скролу (наприклад, у таблицях) */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--grey-40, #d5d5d5);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--grey-60, #bfbfbf);
+}
