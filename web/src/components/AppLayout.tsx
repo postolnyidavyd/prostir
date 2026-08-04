@@ -6,7 +6,7 @@ import Sidebar from './Sidebar';
 const Container = styled.div`
   display: flex;
   min-height: 100dvh;
-  background-color: var(--base-white);
+  background-color: var(--primary-grey);
 `;
 
 const Main = styled.main`

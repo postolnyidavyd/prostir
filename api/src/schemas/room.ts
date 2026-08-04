@@ -10,12 +10,17 @@ const optionalUtcDateTime = z.preprocess(
     .optional(),
 );
 
+const floors = z.preprocess(
+  (value) => {
+    if (typeof value !== 'string' || value.trim() === '') return undefined;
+    return value.split(',').map((part) => Number(part));
+  },
+  z.array(z.number().int().positive('Поверх має бути додатним')).optional(),
+);
+
 export const roomFilterSchema = z
   .object({
-    floor: z.preprocess(
-      emptyToUndefined,
-      z.coerce.number().int().positive('Поверх має бути додатним').optional(),
-    ),
+    floors,
     minCapacity: z.preprocess(
       emptyToUndefined,
       z.coerce.number().int().positive('Місткість має бути додатною').optional(),

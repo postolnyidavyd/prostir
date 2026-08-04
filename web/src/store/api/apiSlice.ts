@@ -60,7 +60,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Rooms', 'RoomBookings', 'MyBookings'],
+  tagTypes: ['Rooms', 'RoomFilters', 'RoomBookings', 'MyBookings'],
   endpoints: () => ({}),
 });
 

@@ -47,10 +47,12 @@ function LoginPage() {
       // редірект зробить PublicOnly, щойно статус стане authenticated
     } catch (error) {
       const fields = apiFieldErrors(error);
-      const entries = Object.entries(fields);
+      const known = Object.entries(fields).filter(
+        ([name]) => name === 'email' || name === 'password',
+      );
 
-      if (entries.length > 0) {
-        entries.forEach(([name, message]) => setError(name as keyof LoginValues, { message }));
+      if (known.length > 0) {
+        known.forEach(([name, message]) => setError(name as keyof LoginValues, { message }));
       } else {
         toast.error(apiErrorMessage(error));
       }

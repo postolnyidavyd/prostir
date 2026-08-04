@@ -87,13 +87,33 @@ describe('GET /rooms', () => {
     expect(response.status).toBe(401);
   });
 
-  it('фільтр за поверхом', async () => {
+  it('фільтр за поверхами (один і кілька)', async () => {
+    const single = await request(app)
+      .get('/rooms?floors=2')
+      .set('Authorization', `Bearer ${ownerToken}`);
+
+    expect(single.status).toBe(200);
+    expect(single.body.rooms.every((room: { floor: number }) => room.floor === 2)).toBe(true);
+
+    const multi = await request(app)
+      .get('/rooms?floors=1,2')
+      .set('Authorization', `Bearer ${ownerToken}`);
+
+    expect(multi.status).toBe(200);
+    expect(
+      multi.body.rooms.every((room: { floor: number }) => room.floor === 1 || room.floor === 2),
+    ).toBe(true);
+  });
+
+  it('/rooms/filters віддає наявні поверхи й діапазон місткості', async () => {
     const response = await request(app)
-      .get('/rooms?floor=2')
+      .get('/rooms/filters')
       .set('Authorization', `Bearer ${ownerToken}`);
 
     expect(response.status).toBe(200);
-    expect(response.body.rooms.every((room: { floor: number }) => room.floor === 2)).toBe(true);
+    expect(Array.isArray(response.body.floors)).toBe(true);
+    expect(response.body.floors.length).toBeGreaterThan(0);
+    expect(response.body.maxCapacity).toBeGreaterThan(0);
   });
 
   it('фільтр за місткістю віддає кімнати не менші за задану', async () => {
@@ -108,7 +128,7 @@ describe('GET /rooms', () => {
 
   it('порожній фільтр не вважається заданим', async () => {
     const response = await request(app)
-      .get('/rooms?floor=&minCapacity=')
+      .get('/rooms?floors=&minCapacity=')
       .set('Authorization', `Bearer ${ownerToken}`);
 
     expect(response.status).toBe(200);

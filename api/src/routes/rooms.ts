@@ -14,6 +14,8 @@ roomsRouter.use(authGuard);
 
 roomsRouter.get('/', validate({ query: roomFilterSchema }), roomsController.list);
 
+roomsRouter.get('/filters', roomsController.filterOptions);
+
 roomsRouter.get(
   '/:id/bookings',
   validate({ params: idParamSchema, query: bookingRangeSchema }),
