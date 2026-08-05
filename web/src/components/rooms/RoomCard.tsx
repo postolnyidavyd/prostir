@@ -81,9 +81,10 @@ type RoomCardProps = {
   room: Room;
   // вікно в минулому забронювати не можна, тож "Недоступно" в бейджі замість зайнята
   past?: boolean;
+  onSelect?: () => void;
 };
 
-function RoomCard({ room, past = false }: RoomCardProps) {
+function RoomCard({ room, past = false, onSelect }: RoomCardProps) {
   const badge = past
     ? { status: 'unavailable' as const, label: 'Недоступно' }
     : room.available
@@ -91,7 +92,7 @@ function RoomCard({ room, past = false }: RoomCardProps) {
       : { status: 'busy' as const, label: 'Зайнята' };
 
   return (
-    <Card>
+    <Card onClick={onSelect}>
       <ImageWrap>
         <Image src={room.imageUrl} alt={room.name} loading="lazy" />
       </ImageWrap>

@@ -1,28 +1,11 @@
 import type { ButtonHTMLAttributes } from 'react';
-import styled, { css, keyframes } from 'styled-components';
+import styled, { css } from 'styled-components';
 
+import { hoverMesh } from '../../styles/mesh';
 import Spinner from './Spinner';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md';
-
-const wander = keyframes`
-  0%   { background-position: 0 50%; }
-  25%  { background-position: 50% 0; }
-  50%  { background-position: 100% 50%; }
-  75%  { background-position: 50% 100%; }
-  100% { background-position: 0 50%; }
-`;
-
-const hoverMesh = css`
-  background-color: #0d0d0d;
-  background-image:
-    radial-gradient(circle at 35% 40%, #3a3a3a, transparent 45%),
-    radial-gradient(circle at 65% 60%, #242424, transparent 50%);
-  background-size: 180% 180%;
-  animation: ${wander} 12s linear infinite;
-  background-origin: border-box;
-`;
 
 const variants: Record<Variant, ReturnType<typeof css>> = {
   primary: css`
@@ -107,6 +90,22 @@ const sizes: Record<Size, ReturnType<typeof css>> = {
   `,
 };
 
+const LoadingLayer = styled.span`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const Inner = styled.span<{ $hidden: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: inherit;
+  visibility: ${({ $hidden }) => ($hidden ? 'hidden' : 'visible')};
+`;
+
 const StyledButton = styled.button<{ $variant: Variant; $size: Size; $fullWidth: boolean }>`
   position: relative;
   display: inline-flex;
@@ -165,8 +164,12 @@ function Button({
       disabled={isLoading || disabled}
       {...props}
     >
-      {isLoading && <Spinner size="sm" />}
-      {children}
+      {isLoading && (
+        <LoadingLayer>
+          <Spinner size="sm" />
+        </LoadingLayer>
+      )}
+      <Inner $hidden={isLoading}>{children}</Inner>
     </StyledButton>
   );
 }

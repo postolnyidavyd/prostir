@@ -15,7 +15,7 @@ const Wrap = styled.div`
 
 const Panel = styled.div`
   position: fixed;
-  z-index: 100;
+  z-index: 300;
   background-color: var(--base-white);
   border: 1px solid var(--base-bright-grey);
   border-radius: 1rem;
@@ -43,7 +43,7 @@ function Popover({ renderTrigger, children }: PopoverProps) {
     };
 
     updatePosition();
-    // capture — щоб ловити скрол будь-якого предка, а не лише window
+
     window.addEventListener('scroll', updatePosition, true);
     window.addEventListener('resize', updatePosition);
     return () => {

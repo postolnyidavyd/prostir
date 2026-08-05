@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { uk } from 'date-fns/locale';
-import { fromZonedTime } from 'date-fns-tz';
+import { fromZonedTime, getTimezoneOffset, toZonedTime } from 'date-fns-tz';
 
 // робочі години в київському часі, а конвертуємо при показі в пояс браузера
 export const KYIV_TZ = 'Europe/Kyiv';
@@ -35,6 +35,12 @@ export function formatDateLabel(date: Date): string {
 
 export function formatMonthLabel(date: Date): string {
   return format(date, 'LLLL yyyy', { locale: uk });
+}
+
+// компактна дата для модалки  по типу Вт 4.серп
+export function formatDayShort(date: Date): string {
+  const label = format(date, 'EEEEEE, d MMM', { locale: uk });
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 // зсув пояса браузера - "GMT+3" і тд
@@ -81,4 +87,68 @@ export function defaultRange(now: Date = new Date()): {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   return { date: tomorrow, fromMin: WORK_START_MIN, toMin: WORK_START_MIN + SLOT_MIN };
+}
+
+// "1 год 30 хв" / "45 хв"
+export function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours} год`);
+  if (mins > 0) parts.push(`${mins} хв`);
+  return parts.join(' ');
+}
+
+// тиждень для сітки розкладу
+export function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+// понеділок тижня, що містить дату
+export function startOfWeek(date: Date): Date {
+  const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dow = (day.getDay() + 6) % 7; // Пн = 0
+  return addDays(day, -dow);
+}
+
+export function weekDays(weekStart: Date): Date[] {
+  return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+}
+
+// 27 лип. - 2 сер. 2026
+export function formatWeekRange(weekStart: Date): string {
+  const end = addDays(weekStart, 6);
+  return `${format(weekStart, 'd MMM', { locale: uk })} - ${format(end, 'd MMM yyyy', { locale: uk })}`;
+}
+
+export function formatWeekday(date: Date): string {
+  return format(date, 'EEEE', { locale: uk });
+}
+
+
+function toKyiv(iso: string): Date {
+  return toZonedTime(new Date(iso), KYIV_TZ);
+}
+
+// хвилини від опівночі за Києвом
+export function kyivMinutesOfDay(iso: string): number {
+  const zoned = toKyiv(iso);
+  return zoned.getHours() * 60 + zoned.getMinutes();
+}
+
+// чи припадає момент на цей київський день (для розкладки по колонках)
+export function isSameKyivDay(iso: string, day: Date): boolean {
+  const zoned = toKyiv(iso);
+  return (
+    zoned.getFullYear() === day.getFullYear() &&
+    zoned.getMonth() === day.getMonth() &&
+    zoned.getDate() === day.getDate()
+  );
+}
+
+// чи пояс браузера збігається з київським
+export function isKyivTimeZone(now: Date = new Date()): boolean {
+  return getTimezoneOffset(KYIV_TZ, now) === -now.getTimezoneOffset() * 60_000;
 }

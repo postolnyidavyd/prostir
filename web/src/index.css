@@ -148,6 +148,10 @@
   padding: 0;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family: 'e-Ukraine', sans-serif;
   -webkit-font-smoothing: antialiased;

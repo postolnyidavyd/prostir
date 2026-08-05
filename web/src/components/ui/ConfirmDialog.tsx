@@ -7,7 +7,7 @@ import Button from './Button';
 import Modal from './Modal';
 
 const Card = styled.div`
-  width: min(28.3125rem, 100%);
+  width: min(28.3125rem, calc(100vw - 3rem));
   display: flex;
   flex-direction: column;
   align-items: center;

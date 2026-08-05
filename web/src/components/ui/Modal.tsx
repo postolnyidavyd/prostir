@@ -26,6 +26,7 @@ const Overlay = styled.div`
 `;
 
 const Content = styled.div`
+  max-width: 100%;
   max-height: 90dvh;
   overflow-y: auto;
   animation: ${pop} 0.18s cubic-bezier(0.4, 0, 0.2, 1);
