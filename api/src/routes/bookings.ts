@@ -10,6 +10,8 @@ export const bookingsRouter = Router();
 
 bookingsRouter.use(authGuard);
 
+bookingsRouter.get('/my/current', bookingsController.currentMine);
+
 bookingsRouter.get('/my', validate({ query: myBookingsQuerySchema }), bookingsController.listMine);
 
 bookingsRouter.post('/', validate({ body: createBookingSchema }), bookingsController.create);

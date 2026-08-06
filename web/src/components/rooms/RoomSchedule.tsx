@@ -2,24 +2,19 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 
-import CalendarCloseIcon from '../../assets/icons/Calendar_Close.svg?react';
 import ChevronLeftIcon from '../../assets/icons/Chevron_Left.svg?react';
 import WarningIcon from '../../assets/icons/Triangle_Warning.svg?react';
 import { toast } from '../../lib/toast';
 import { addDays, kyivMinutesToUtc, startOfWeek, weekDays } from '../../lib/time';
 import { useRoomFilters } from './useRoomFilters';
-import {
-  useCancelBookingMutation,
-  useGetRoomBookingsQuery,
-  type RoomBooking,
-} from '../../store/api/bookingsApi';
+import { useGetRoomBookingsQuery } from '../../store/api/bookingsApi';
 import { useGetRoomsQuery } from '../../store/api/roomsApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/authSlice';
 import { text } from '../../styles/typography';
 import Button from '../ui/Button';
-import ConfirmDialog from '../ui/ConfirmDialog';
 import EmptyState from '../ui/EmptyState';
+import { useCancelBooking } from '../bookings/useCancelBooking';
 import BookingModal, { type BookingDraft } from './BookingModal';
 import GridLegend from './GridLegend';
 import RoomTabs from './RoomTabs';
@@ -135,22 +130,7 @@ function RoomSchedule({ roomId }: RoomScheduleProps) {
   // спосіб цього батьківскього компонента сказати сітці зняти вибір
   const [resetToken, setResetToken] = useState(0);
 
-  const [cancelTarget, setCancelTarget] = useState<RoomBooking | null>(null);
-
-
-  const [cancelBooking, { isLoading: cancelling }] = useCancelBookingMutation();
-
-  const confirmCancel = async () => {
-    if (!cancelTarget) return;
-    try {
-      await cancelBooking({ id: cancelTarget.id, roomId }).unwrap();
-      toast.success('Бронювання скасовано');
-    } catch {
-      toast.error('Не вдалося скасувати', 'Спробуй ще раз.');
-    } finally {
-      setCancelTarget(null);
-    }
-  };
+  const { requestCancel, dialog: cancelDialog } = useCancelBooking();
 
   let content;
   if (isError) {
@@ -173,7 +153,7 @@ function RoomSchedule({ roomId }: RoomScheduleProps) {
         bookings={bookings}
         currentUserId={currentUser?.id}
         onCreate={setDraft}
-        onCancel={setCancelTarget}
+        onCancel={(booking) => requestCancel({ id: booking.id, roomId })}
         highlightDay={filters.date}
         highlightFrom={filters.fromMin}
         highlightTo={filters.toMin}
@@ -221,17 +201,7 @@ function RoomSchedule({ roomId }: RoomScheduleProps) {
         />
       )}
 
-      <ConfirmDialog
-        open={cancelTarget !== null}
-        onClose={() => setCancelTarget(null)}
-        onConfirm={confirmCancel}
-        icon={<CalendarCloseIcon />}
-        title="Скасувати бронювання?"
-        description="Слот звільниться і стане доступним іншим. Цю дію не можна відмінити."
-        confirmLabel="Так, скасувати"
-        cancelLabel="Назад"
-        loading={cancelling}
-      />
+      {cancelDialog}
 
       <GridLegend />
     </Wrap>

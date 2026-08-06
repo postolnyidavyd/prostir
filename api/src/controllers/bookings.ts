@@ -19,6 +19,10 @@ export const listMine: RequestHandler<unknown, unknown, unknown, MyBookingsQuery
   res.json(await bookingsService.listMyBookings(requireUserId(req), req.query));
 };
 
+export const currentMine: RequestHandler = async (req, res) => {
+  res.json({ booking: await bookingsService.getCurrentBooking(requireUserId(req)) });
+};
+
 export const create: RequestHandler<unknown, unknown, CreateBookingInput> = async (req, res) => {
   const booking = await bookingsService.createBooking(requireUserId(req), req.body);
 

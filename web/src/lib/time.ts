@@ -89,6 +89,37 @@ export function defaultRange(now: Date = new Date()): {
   return { date: tomorrow, fromMin: WORK_START_MIN, toMin: WORK_START_MIN + SLOT_MIN };
 }
 
+// час у поясі браузера - 17:30
+export function formatTime(iso: string): string {
+  return format(new Date(iso), 'HH:mm');
+}
+
+// пн, 3 серпня
+export function formatBookingDay(iso: string): string {
+  return format(new Date(iso), 'eee, d MMMM', { locale: uk });
+}
+
+// yyyy-MM-dd дати для url параметрів
+export function toDateParam(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+// yyyy-MM-dd початку тижня
+export function weekParamOf(date: Date): string {
+  return toDateParam(startOfWeek(date));
+}
+
+// локальна дата на київський день моменту
+export function kyivDayOf(iso: string): Date {
+  const zoned = toZonedTime(new Date(iso), KYIV_TZ);
+  return new Date(zoned.getFullYear(), zoned.getMonth(), zoned.getDate());
+}
+
+// хвилини від опівночі
+export function minutesToHHMM(minutes: number): string {
+  return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
+}
+
 // "1 год 30 хв" / "45 хв"
 export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);
