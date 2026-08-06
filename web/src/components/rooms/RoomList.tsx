@@ -13,6 +13,7 @@ import {
   isSlotPast,
   slotLabel,
   slotToIso,
+  weekParamOf,
 } from '../../lib/time';
 import {
   useGetRoomFilterOptionsQuery,
@@ -64,6 +65,7 @@ function RoomList() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('room', id);
+      next.set('week', weekParamOf(date));
       return next;
     });
 

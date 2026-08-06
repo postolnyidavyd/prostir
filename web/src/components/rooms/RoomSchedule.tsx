@@ -76,7 +76,7 @@ function RoomSchedule({ roomId }: RoomScheduleProps) {
   const weekParam = searchParams.get('week');
   const weekStart = useMemo(() => {
     const base = weekParam ? new Date(weekParam) : new Date();
-    // Number.isNaN(base.getTime() - перевірка чи валідна дата
+    // Number.isNaN(base.getTime()) - перевірка чи валідна дата
     return startOfWeek(Number.isNaN(base.getTime()) ? new Date() : base);
   }, [weekParam]);
 
