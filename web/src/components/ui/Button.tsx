@@ -4,7 +4,7 @@ import styled, { css } from 'styled-components';
 import { hoverMesh } from '../../styles/mesh';
 import Spinner from './Spinner';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'dangerSoft';
 type Size = 'sm' | 'md';
 
 const variants: Record<Variant, ReturnType<typeof css>> = {
@@ -39,9 +39,12 @@ const variants: Record<Variant, ReturnType<typeof css>> = {
       padding: 2px;
       ${hoverMesh};
       -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
+        -webkit-linear-gradient(#fff, #fff) content-box,
+        -webkit-linear-gradient(#fff, #fff);
       -webkit-mask-composite: xor;
+      mask:
+        linear-gradient(#fff, #fff) content-box,
+        linear-gradient(#fff, #fff);
       mask-composite: exclude;
       pointer-events: none;
     }
@@ -67,6 +70,18 @@ const variants: Record<Variant, ReturnType<typeof css>> = {
     &:disabled {
       background-color: var(--brick-red-40);
       color: var(--grey-20);
+    }
+  `,
+  dangerSoft: css`
+    background-color: var(--base-white);
+    color: var(--brick-red-100);
+    border: 1px solid #f9e6ea;
+    &:hover:not(:disabled) {
+      background-color: var(--brick-red-20);
+    }
+    &:disabled {
+      border-color: #ededed;
+      color: var(--grey-100);
     }
   `,
 };

@@ -5,6 +5,7 @@ import { app } from '../../src/app.js';
 import { prisma } from '../../src/db/client.js';
 
 const EMAIL = 'auth-test@gmail.com';
+const OTHER_EMAIL = 'auth-test-2@gmail.com';
 const PASSWORD = 'parol12345';
 
 const credentials = {
@@ -20,18 +21,20 @@ function refreshCookie(headers: Record<string, unknown>): string {
   return Array.isArray(cookies) ? (cookies.find((c) => c.startsWith('refreshToken=')) ?? '') : '';
 }
 
-async function registerUser() {
-  const response = await request(app).post('/auth/register').send(credentials);
+async function registerUser(overrides: Partial<typeof credentials> = {}) {
+  const response = await request(app)
+    .post('/auth/register')
+    .send({ ...credentials, ...overrides });
 
   return { accessToken: response.body.accessToken as string, cookie: refreshCookie(response.headers) };
 }
 
 beforeEach(async () => {
-  await prisma.user.deleteMany({ where: { email: EMAIL } });
+  await prisma.user.deleteMany({ where: { email: { in: [EMAIL, OTHER_EMAIL] } } });
 });
 
 afterAll(async () => {
-  await prisma.user.deleteMany({ where: { email: EMAIL } });
+  await prisma.user.deleteMany({ where: { email: { in: [EMAIL, OTHER_EMAIL] } } });
   await prisma.$disconnect();
 });
 
@@ -181,5 +184,132 @@ describe('POST /auth/logout', () => {
     const response = await request(app).post('/auth/logout');
 
     expect(response.status).toBe(204);
+  });
+});
+
+describe('PATCH /auth/me', () => {
+  it('без токена 401', async () => {
+    const response = await request(app)
+      .patch('/auth/me')
+      .send({ email: EMAIL, firstName: 'A', lastName: 'B' });
+
+    expect(response.status).toBe(401);
+  });
+
+  it('оновлює дані, нормалізує email, getMe віддає нові', async () => {
+    const { accessToken } = await registerUser();
+
+    const response = await request(app)
+      .patch('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ email: '  Auth-Test-2@Gmail.COM ', firstName: 'Нове', lastName: 'Прізвище' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.user).toMatchObject({
+      email: OTHER_EMAIL,
+      firstName: 'Нове',
+      lastName: 'Прізвище',
+    });
+
+    const me = await request(app).get('/auth/me').set('Authorization', `Bearer ${accessToken}`);
+    expect(me.body.user.email).toBe(OTHER_EMAIL);
+  });
+
+  it('email зайнятий іншим - 400 з полем email', async () => {
+    await registerUser();
+    const other = await registerUser({ email: OTHER_EMAIL });
+
+    const response = await request(app)
+      .patch('/auth/me')
+      .set('Authorization', `Bearer ${other.accessToken}`)
+      .send({ email: EMAIL, firstName: 'Тест', lastName: 'Автентифікації' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.errors.email).toBeTruthy();
+  });
+
+  it('порожнє ім’я - 400 з полем', async () => {
+    const { accessToken } = await registerUser();
+
+    const response = await request(app)
+      .patch('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ email: EMAIL, firstName: '   ', lastName: 'Прізвище' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.errors.firstName).toBeTruthy();
+  });
+});
+
+describe('PATCH /auth/me/password', () => {
+  it('без токена 401', async () => {
+    const response = await request(app)
+      .patch('/auth/me/password')
+      .send({ currentPassword: PASSWORD, newPassword: 'newparol123' });
+
+    expect(response.status).toBe(401);
+  });
+
+  it('невірний поточний - 400 з полем', async () => {
+    const { accessToken } = await registerUser();
+
+    const response = await request(app)
+      .patch('/auth/me/password')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ currentPassword: 'wrongpass1', newPassword: 'newparol123' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.errors.currentPassword).toBeTruthy();
+  });
+
+  it('слабкий новий - 400 з полем', async () => {
+    const { accessToken } = await registerUser();
+
+    const response = await request(app)
+      .patch('/auth/me/password')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ currentPassword: PASSWORD, newPassword: '123' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.errors.newPassword).toBeTruthy();
+  });
+
+  it('новий = поточний - 400 з полем', async () => {
+    const { accessToken } = await registerUser();
+
+    const response = await request(app)
+      .patch('/auth/me/password')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ currentPassword: PASSWORD, newPassword: PASSWORD });
+
+    expect(response.status).toBe(400);
+    expect(response.body.errors.newPassword).toBeTruthy();
+  });
+
+  it('успіх: новий пароль працює, старий ні, інші сесії розлоговані', async () => {
+    const { accessToken, cookie } = await registerUser();
+
+    const changed = await request(app)
+      .patch('/auth/me/password')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ currentPassword: PASSWORD, newPassword: 'newparol123' });
+
+    expect(changed.status).toBe(200);
+    expect(changed.body.accessToken).toBeTruthy();
+
+    // стара refresh-сесія розлогована
+    const oldRefresh = await request(app).post('/auth/refresh').set('Cookie', cookie);
+    expect(oldRefresh.status).toBe(401);
+
+    // старим паролем не зайти, новим - можна
+    const oldLogin = await request(app)
+      .post('/auth/login')
+      .send({ email: EMAIL, password: PASSWORD });
+    expect(oldLogin.status).toBe(401);
+
+    const newLogin = await request(app)
+      .post('/auth/login')
+      .send({ email: EMAIL, password: 'newparol123' });
+    expect(newLogin.status).toBe(200);
   });
 });

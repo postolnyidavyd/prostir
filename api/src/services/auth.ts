@@ -2,12 +2,18 @@ import bcrypt from 'bcryptjs';
 
 import { prisma } from '../db/client.js';
 import { isUniqueViolation } from '../db/errors.js';
-import { AppError } from '../lib/errors.js';
-import type { LoginInput, RegisterInput } from '../schemas/auth.js';
+import { AppError, ValidationError } from '../lib/errors.js';
+import type {
+  ChangePasswordInput,
+  LoginInput,
+  RegisterInput,
+  UpdateProfileInput,
+} from '../schemas/auth.js';
 import {
   createRefreshSession,
   issueAccessToken,
   rotateRefreshSession,
+  revokeAllSessions,
   revokeSessionsByToken,
   type SessionMeta,
 } from './tokens.js';
@@ -106,4 +112,60 @@ export async function getUser(userId: string): Promise<PublicUser> {
   }
 
   return user;
+}
+
+export async function updateProfile(
+  userId: string,
+  input: UpdateProfileInput,
+): Promise<PublicUser> {
+  try {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { email: input.email, firstName: input.firstName, lastName: input.lastName },
+      select: publicUser,
+    });
+  } catch (error) {
+    // зайнятий email показуємо інлайн під полем
+    if (isUniqueViolation(error)) {
+      throw new ValidationError({ email: ['Цей email уже зайнятий'] });
+    }
+
+    throw error;
+  }
+}
+
+export async function changePassword(
+  userId: string,
+  input: ChangePasswordInput,
+  meta: SessionMeta,
+): Promise<{ accessToken: string; refreshToken: string }> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { passwordHash: true },
+  });
+
+  if (!user) {
+    throw new AppError(401, 'Сесія недійсна');
+  }
+
+  if (!(await bcrypt.compare(input.currentPassword, user.passwordHash))) {
+    throw new ValidationError({ currentPassword: ['Поточний пароль невірний'] });
+  }
+
+  if (await bcrypt.compare(input.newPassword, user.passwordHash)) {
+    throw new ValidationError({ newPassword: ['Новий пароль має відрізнятися від поточного'] });
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: await bcrypt.hash(input.newPassword, BCRYPT_ROUNDS) },
+  });
+
+  // зміна пароля розлоговує всі пристрої, поточному видаємо свіжу сесію
+  await revokeAllSessions(userId);
+
+  return {
+    accessToken: issueAccessToken(userId),
+    refreshToken: await createRefreshSession(userId, meta),
+  };
 }

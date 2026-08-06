@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import { formatBookingDay, formatDuration, formatTime } from '../../lib/time';
 import type { BookingScope, MyBooking } from '../../store/api/bookingsApi';
-import { CancelButton } from './CancelButton';
+import Button from '../ui/Button';
 import { scheduleLinkFor } from './scheduleLink';
 import StatusBadge from './StatusBadge';
 
@@ -145,15 +145,16 @@ function BookingRow({ booking, scope, onCancel }: BookingRowProps) {
       <Right>
         <StatusBadge status={past ? 'done' : 'planned'} />
         {!past && onCancel && (
-          <CancelButton
-            type="button"
+          <Button
+            variant="dangerSoft"
+            size="sm"
             onClick={(event) => {
               event.stopPropagation();
               onCancel();
             }}
           >
             Скасувати
-          </CancelButton>
+          </Button>
         )}
       </Right>
     </Row>

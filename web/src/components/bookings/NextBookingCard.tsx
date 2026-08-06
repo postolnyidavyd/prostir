@@ -5,7 +5,7 @@ import ClockIcon from '../../assets/icons/Clock.svg?react';
 import { humanizeDuration } from '../../lib/relativeTime';
 import { formatBookingDay, formatTime, isSameDay } from '../../lib/time';
 import type { CurrentBooking } from '../../store/api/bookingsApi';
-import { CancelButton } from './CancelButton';
+import Button from '../ui/Button';
 import { scheduleLinkFor } from './scheduleLink';
 
 const Card = styled.article<{ $running: boolean }>`
@@ -205,9 +205,9 @@ function NextBookingCard({ booking, now, onCancel }: NextBookingCardProps) {
         <Actions>
           <OpenLink to={scheduleLink}>Відкрити розклад</OpenLink>
           {!running && (
-            <CancelButton type="button" onClick={onCancel}>
+            <Button variant="dangerSoft" size="sm" onClick={onCancel}>
               Скасувати
-            </CancelButton>
+            </Button>
           )}
         </Actions>
       </Right>

@@ -1,9 +1,18 @@
 import apiSlice from './apiSlice';
-import { logout, setAnonymous, setCredentials, setUser, type User } from '../authSlice';
+import {
+  logout,
+  setAccessToken,
+  setAnonymous,
+  setCredentials,
+  setUser,
+  type User,
+} from '../authSlice';
 
 type AuthResponse = { accessToken: string; user: User };
 type LoginRequest = { email: string; password: string };
 type RegisterRequest = LoginRequest & { firstName: string; lastName: string };
+type UpdateProfileRequest = { email: string; firstName: string; lastName: string };
+type ChangePasswordRequest = { currentPassword: string; newPassword: string };
 
 const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -48,8 +57,32 @@ const authApi = apiSlice.injectEndpoints({
         }
       },
     }),
+
+    updateProfile: builder.mutation<User, UpdateProfileRequest>({
+      query: (body) => ({ url: '/auth/me', method: 'PATCH', body }),
+      transformResponse: (response: { user: User }) => response.user,
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        const { data } = await queryFulfilled;
+        dispatch(setUser(data));
+      },
+    }),
+
+    changePassword: builder.mutation<{ accessToken: string }, ChangePasswordRequest>({
+      query: (body) => ({ url: '/auth/me/password', method: 'PATCH', body }),
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        const { data } = await queryFulfilled;
+        dispatch(setAccessToken(data.accessToken));
+      },
+    }),
   }),
 });
 
-export const { useGetMeQuery, useLoginMutation, useRegisterMutation, useLogoutMutation } = authApi;
+export const {
+  useGetMeQuery,
+  useLoginMutation,
+  useRegisterMutation,
+  useLogoutMutation,
+  useUpdateProfileMutation,
+  useChangePasswordMutation,
+} = authApi;
 export default authApi;
