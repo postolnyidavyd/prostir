@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import AppLayout from '../components/AppLayout';
+import LandingPage from '../pages/LandingPage';
 import LoginPage from '../pages/LoginPage';
 import MyBookingsPage from '../pages/MyBookingsPage';
 import ProfilePage from '../pages/ProfilePage';
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
       {
         element: <PublicOnly />,
         children: [
+          { path: '/welcome', element: <LandingPage /> },
           { path: '/login', element: <LoginPage /> },
           { path: '/register', element: <RegisterPage /> },
         ],
