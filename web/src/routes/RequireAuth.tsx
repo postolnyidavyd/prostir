@@ -5,7 +5,7 @@ import { useAppSelector } from '../store/hooks';
 
 function RequireAuth() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  return isAuthenticated ? <Outlet /> : <Navigate to="/welcome" replace />;
 }
 
 export default RequireAuth;
