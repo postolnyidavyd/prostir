@@ -2,7 +2,12 @@ import type { CookieOptions, Request, RequestHandler, Response } from 'express';
 
 import { env } from '../config/env.js';
 import { requireUserId } from '../middleware/auth-guard.js';
-import type { LoginInput, RegisterInput } from '../schemas/auth.js';
+import type {
+  ChangePasswordInput,
+  LoginInput,
+  RegisterInput,
+  UpdateProfileInput,
+} from '../schemas/auth.js';
 import * as authService from '../services/auth.js';
 import { refreshTokenExpiresAt, type SessionMeta } from '../services/tokens.js';
 
@@ -57,4 +62,19 @@ export const logout: RequestHandler = async (req, res) => {
 
 export const me: RequestHandler = async (req, res) => {
   res.json({ user: await authService.getUser(requireUserId(req)) });
+};
+
+export const updateMe: RequestHandler<unknown, unknown, UpdateProfileInput> = async (req, res) => {
+  res.json({ user: await authService.updateProfile(requireUserId(req), req.body) });
+};
+
+export const changePassword: RequestHandler<unknown, unknown, ChangePasswordInput> = async (
+  req,
+  res,
+) => {
+  const result = await authService.changePassword(requireUserId(req), req.body, sessionMeta(req));
+
+  // видаємо поточному пристрою свіжу сесію замість скасованої
+  setRefreshCookie(res, result.refreshToken);
+  res.json({ accessToken: result.accessToken });
 };

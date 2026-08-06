@@ -8,6 +8,26 @@ export type RoomBooking = {
   user: { id: string; displayName: string };
 };
 
+export type BookingScope = 'upcoming' | 'past';
+
+export type MyBooking = {
+  id: string;
+  title: string;
+  startsAt: string;
+  endsAt: string;
+  room: { id: string; name: string };
+};
+
+export type CurrentBooking = {
+  id: string;
+  title: string;
+  startsAt: string;
+  endsAt: string;
+  room: { id: string; name: string; floor: number; capacity: number };
+};
+
+type MyBookingsPage = { bookings: MyBooking[]; nextCursor: string | null; total: number };
+
 type RoomBookingsQuery = { roomId: string; from: string; to: string };
 type CreateBookingArgs = { roomId: string; title: string; startsAt: string; endsAt: string };
 type CancelBookingArgs = { id: string; roomId: string };
@@ -40,9 +60,33 @@ const bookingsApi = apiSlice.injectEndpoints({
       invalidatesTags: (_result, error, { roomId }) =>
         error ? [] : [{ type: 'RoomBookings', id: roomId }, 'Rooms', 'MyBookings'],
     }),
+
+    // хайлайт наступне бронювання - триває або найближче в майб
+    getCurrentBooking: builder.query<CurrentBooking | null, void>({
+      query: () => '/bookings/my/current',
+      transformResponse: (response: { booking: CurrentBooking | null }) => response.booking,
+      providesTags: ['MyBookings'],
+    }),
+
+    getMyBookings: builder.infiniteQuery<MyBookingsPage, BookingScope, string | undefined>({
+      infiniteQueryOptions: {
+        initialPageParam: undefined,
+        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+      },
+      query: ({ queryArg: scope, pageParam }) => ({
+        url: '/bookings/my',
+        params: { scope, ...(pageParam ? { cursor: pageParam } : {}) },
+      }),
+      providesTags: ['MyBookings'],
+    }),
   }),
 });
 
-export const { useGetRoomBookingsQuery, useCreateBookingMutation, useCancelBookingMutation } =
-  bookingsApi;
+export const {
+  useGetRoomBookingsQuery,
+  useCreateBookingMutation,
+  useCancelBookingMutation,
+  useGetCurrentBookingQuery,
+  useGetMyBookingsInfiniteQuery,
+} = bookingsApi;
 export default bookingsApi;

@@ -10,13 +10,15 @@ const email = z
 const name = (field: string) =>
   z.string().trim().min(1, `${field} не може бути порожнім`).max(50, 'Максимум 50 символів');
 
+// 72 це межа bcrypt
+const password = z
+  .string()
+  .min(8, 'Пароль має бути щонайменше 8 символів')
+  .max(72, 'Пароль має бути щонайбільше 72 символи');
+
 export const registerSchema = z.object({
   email,
-  // 72 це межа bcrypt
-  password: z
-    .string()
-    .min(8, 'Пароль має бути щонайменше 8 символів')
-    .max(72, 'Пароль має бути щонайбільше 72 символи'),
+  password,
   firstName: name("Ім'я"),
   lastName: name('Прізвище'),
 });
@@ -26,5 +28,18 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Введіть пароль'),
 });
 
+export const updateProfileSchema = z.object({
+  email,
+  firstName: name("Ім'я"),
+  lastName: name('Прізвище'),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Введіть поточний пароль'),
+  newPassword: password,
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

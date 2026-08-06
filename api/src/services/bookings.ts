@@ -74,12 +74,22 @@ export async function listRoomBookings(
   return bookings.map(toPublicBooking);
 }
 
+// у списку показуємо лише назву кімнати
 const myBookingFields = {
   id: true,
   title: true,
   startsAt: true,
   endsAt: true,
-  room: { select: { id: true, name: true, floor: true } },
+  room: { select: { id: true, name: true } },
+} as const;
+
+// наступне бронювання показує ще місткість і поверх
+const currentBookingFields = {
+  id: true,
+  title: true,
+  startsAt: true,
+  endsAt: true,
+  room: { select: { id: true, name: true, floor: true, capacity: true } },
 } as const;
 
 export type MyBooking = {
@@ -87,7 +97,15 @@ export type MyBooking = {
   title: string;
   startsAt: Date;
   endsAt: Date;
-  room: { id: string; name: string; floor: number };
+  room: { id: string; name: string };
+};
+
+export type CurrentBooking = {
+  id: string;
+  title: string;
+  startsAt: Date;
+  endsAt: Date;
+  room: { id: string; name: string; floor: number; capacity: number };
 };
 
 export type MyBookingsPage = {
@@ -95,6 +113,15 @@ export type MyBookingsPage = {
   nextCursor: string | null;
   total: number;
 };
+
+// поточне, що триває зараз або найближче майбутнє бронювання
+export async function getCurrentBooking(userId: string): Promise<CurrentBooking | null> {
+  return prisma.booking.findFirst({
+    where: { userId, canceledAt: null, endsAt: { gt: new Date() } },
+    orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
+    select: currentBookingFields,
+  });
+}
 
 // пагінація через курсор - id останнього бронювання з попередньої сторінки
 // поки користувач гортає сторінку минулих бронювань, якесь інше стає минулим і зсуває список униз,
@@ -109,7 +136,7 @@ export async function listMyBookings(
   const where = {
     userId,
     canceledAt: null,
-    startsAt: upcoming ? { gt: now } : { lte: now },
+    ...(upcoming ? { startsAt: { gt: now } } : { endsAt: { lte: now } }),
   };
 
   const [bookings, total] = await Promise.all([

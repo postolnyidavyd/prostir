@@ -392,7 +392,7 @@ describe('GET /bookings/my', () => {
     expect(ids).toEqual([sooner.body.booking.id, later.body.booking.id]);
   });
 
-  it('рядок несе кімнату для переходу в сітку', async () => {
+  it('рядок несе кімнату (id для переходу в сітку та назва для показу)', async () => {
     await book(ownerToken, roomAId, slot(0));
 
     const response = await myBookings('scope=upcoming');
@@ -400,7 +400,6 @@ describe('GET /bookings/my', () => {
     expect(response.body.bookings[0].room).toEqual({
       id: roomAId,
       name: ROOM_A,
-      floor: 1,
     });
   });
 
@@ -448,6 +447,61 @@ describe('GET /bookings/my', () => {
 
     expect(response.body.bookings).toHaveLength(2);
     expect(response.body.total).toBe(3);
+  });
+});
+
+describe('GET /bookings/my/current', () => {
+  const myCurrent = (token = ownerToken) =>
+    request(app).get('/bookings/my/current').set('Authorization', `Bearer ${token}`);
+
+  const runningBooking = () =>
+    prisma.booking.create({
+      data: {
+        roomId: roomAId,
+        userId: ownerId,
+        title: 'Триває',
+        startsAt: new Date(Date.now() - 30 * 60_000),
+        endsAt: new Date(Date.now() + 30 * 60_000),
+      },
+    });
+
+  it('без бронювань - null', async () => {
+    const response = await myCurrent();
+
+    expect(response.status).toBe(200);
+    expect(response.body.booking).toBeNull();
+  });
+
+  it('найближче майбутнє з місткістю й поверхом', async () => {
+    await book(ownerToken, roomAId, slot(120));
+    const sooner = await book(ownerToken, roomAId, slot(0));
+
+    const response = await myCurrent();
+
+    expect(response.body.booking.id).toBe(sooner.body.booking.id);
+    expect(response.body.booking.room).toEqual({
+      id: roomAId,
+      name: ROOM_A,
+      floor: 1,
+      capacity: 4,
+    });
+  });
+
+  it('те, що триває зараз, має пріоритет над майбутнім', async () => {
+    await book(ownerToken, roomAId, slot(0));
+    const running = await runningBooking();
+
+    const response = await myCurrent();
+
+    expect(response.body.booking.id).toBe(running.id);
+  });
+
+  it('чуже бронювання не показується', async () => {
+    await book(strangerToken, roomBId, slot(0));
+
+    const response = await myCurrent();
+
+    expect(response.body.booking).toBeNull();
   });
 });
 
