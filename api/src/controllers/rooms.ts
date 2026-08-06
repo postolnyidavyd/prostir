@@ -6,3 +6,7 @@ import * as roomsService from '../services/rooms.js';
 export const list: RequestHandler<unknown, unknown, unknown, RoomFilter> = async (req, res) => {
   res.json({ rooms: await roomsService.listRooms(req.query) });
 };
+
+export const filterOptions: RequestHandler = async (_req, res) => {
+  res.json(await roomsService.getRoomFilterOptions());
+};

@@ -1,8 +1,11 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 
-import HomePlaceholder from '../pages/HomePlaceholder';
+import AppLayout from '../components/AppLayout';
 import LoginPage from '../pages/LoginPage';
+import MyBookingsPage from '../pages/MyBookingsPage';
+import ProfilePage from '../pages/ProfilePage';
 import RegisterPage from '../pages/RegisterPage';
+import RoomsPage from '../pages/RoomsPage';
 import AuthGate from './AuthGate';
 import PublicOnly from './PublicOnly';
 import RequireAuth from './RequireAuth';
@@ -20,7 +23,16 @@ const router = createBrowserRouter([
       },
       {
         element: <RequireAuth />,
-        children: [{ path: '/', element: <HomePlaceholder /> }],
+        children: [
+          {
+            element: <AppLayout />,
+            children: [
+              { index: true, element: <RoomsPage /> },
+              { path: '/my-bookings', element: <MyBookingsPage /> },
+              { path: '/profile', element: <ProfilePage /> },
+            ],
+          },
+        ],
       },
       { path: '*', element: <Navigate to="/" replace /> },
     ],

@@ -17,6 +17,13 @@ export const text = {
     line-height: 2rem;
     letter-spacing: -0.035rem;
   `,
+  h4: css`
+    font-family: 'e-Ukraine', sans-serif;
+    font-size: var(--desktop-headings-h4);
+    font-weight: 400;
+    line-height: 1.75rem;
+    letter-spacing: -0.03rem;
+  `,
   h5: css`
     font-family: 'e-Ukraine', sans-serif;
     font-size: var(--desktop-headings-h5);
@@ -36,6 +43,13 @@ export const text = {
     font-size: var(--desktop-headings-h7);
     font-weight: 400;
     line-height: 1.5rem;
+    letter-spacing: -0.02rem;
+  `,
+  h8: css`
+    font-family: 'e-Ukraine', sans-serif;
+    font-size: var(--desktop-headings-h8);
+    font-weight: 400;
+    line-height: 1rem;
     letter-spacing: -0.02rem;
   `,
   body: css`

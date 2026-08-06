@@ -51,10 +51,12 @@ function RegisterPage() {
       await register(values).unwrap();
     } catch (error) {
       const fields = apiFieldErrors(error);
-      const entries = Object.entries(fields);
+      const known = Object.entries(fields).filter(([name]) =>
+        ['firstName', 'lastName', 'email', 'password'].includes(name),
+      );
 
-      if (entries.length > 0) {
-        entries.forEach(([name, message]) => setError(name as keyof RegisterValues, { message }));
+      if (known.length > 0) {
+        known.forEach(([name, message]) => setError(name as keyof RegisterValues, { message }));
       } else {
         toast.error(apiErrorMessage(error));
       }

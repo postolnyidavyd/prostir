@@ -11,10 +11,27 @@ export type PublicRoom = {
   available?: boolean;
 };
 
+export type RoomFilterOptions = {
+  floors: number[];
+  maxCapacity: number;
+};
+
+// дані для панелі фільтрів: які поверхи бувають і найбільша місткість
+export async function getRoomFilterOptions(): Promise<RoomFilterOptions> {
+  const rooms = await prisma.room.findMany({ select: { floor: true, capacity: true } });
+  const floors = [...new Set(rooms.map((room) => room.floor))].sort((a, b) => a - b);
+  const capacities = rooms.map((room) => room.capacity);
+
+  return {
+    floors,
+    maxCapacity: capacities.length > 0 ? Math.max(...capacities) : 0,
+  };
+}
+
 export async function listRooms(filter: RoomFilter): Promise<PublicRoom[]> {
   const rooms = await prisma.room.findMany({
     where: {
-      ...(filter.floor !== undefined && { floor: filter.floor }),
+      ...(filter.floors && filter.floors.length > 0 && { floor: { in: filter.floors } }),
       ...(filter.minCapacity !== undefined && { capacity: { gte: filter.minCapacity } }),
     },
     orderBy: [{ floor: 'asc' }, { name: 'asc' }],
