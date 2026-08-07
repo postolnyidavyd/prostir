@@ -26,7 +26,10 @@ async function registerUser(overrides: Partial<typeof credentials> = {}) {
     .post('/auth/register')
     .send({ ...credentials, ...overrides });
 
-  return { accessToken: response.body.accessToken as string, cookie: refreshCookie(response.headers) };
+  return {
+    accessToken: response.body.accessToken as string,
+    cookie: refreshCookie(response.headers),
+  };
 }
 
 beforeEach(async () => {
@@ -76,7 +79,9 @@ describe('POST /auth/register', () => {
 describe('POST /auth/login', () => {
   it('невірний пароль - 401 без підказки', async () => {
     await registerUser();
-    const response = await request(app).post('/auth/login').send({ email: EMAIL, password: 'another123' });
+    const response = await request(app)
+      .post('/auth/login')
+      .send({ email: EMAIL, password: 'another123' });
 
     expect(response.status).toBe(401);
     expect(response.body.message).toBe('Невірний email або пароль');
@@ -92,7 +97,9 @@ describe('POST /auth/login', () => {
 
   it('вірні реквізити - 200 і нова сесія', async () => {
     await registerUser();
-    const response = await request(app).post('/auth/login').send({ email: EMAIL, password: PASSWORD });
+    const response = await request(app)
+      .post('/auth/login')
+      .send({ email: EMAIL, password: PASSWORD });
 
     expect(response.status).toBe(200);
     expect(refreshCookie(response.headers)).toBeTruthy();
@@ -114,7 +121,9 @@ describe('GET /auth/me', () => {
 
   it('з токеном свіжі дані з бази', async () => {
     const { accessToken } = await registerUser();
-    const response = await request(app).get('/auth/me').set('Authorization', `Bearer ${accessToken}`);
+    const response = await request(app)
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`);
 
     expect(response.status).toBe(200);
     expect(response.body.user.email).toBe(EMAIL);
@@ -172,10 +181,14 @@ describe('POST /auth/logout', () => {
   it('відкликає всі сесії користувача, а не лише поточну', async () => {
     await registerUser();
     const first = await request(app).post('/auth/login').send({ email: EMAIL, password: PASSWORD });
-    const second = await request(app).post('/auth/login').send({ email: EMAIL, password: PASSWORD });
+    const second = await request(app)
+      .post('/auth/login')
+      .send({ email: EMAIL, password: PASSWORD });
 
     await request(app).post('/auth/logout').set('Cookie', refreshCookie(second.headers));
-    const response = await request(app).post('/auth/refresh').set('Cookie', refreshCookie(first.headers));
+    const response = await request(app)
+      .post('/auth/refresh')
+      .set('Cookie', refreshCookie(first.headers));
 
     expect(response.status).toBe(401);
   });

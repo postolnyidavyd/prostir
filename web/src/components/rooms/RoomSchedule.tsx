@@ -80,7 +80,6 @@ function RoomSchedule({ roomId }: RoomScheduleProps) {
     return startOfWeek(Number.isNaN(base.getTime()) ? new Date() : base);
   }, [weekParam]);
 
-
   // Створення списку днів для рендеру сітки
   const days = useMemo(() => weekDays(weekStart), [weekStart]);
 
@@ -113,7 +112,6 @@ function RoomSchedule({ roomId }: RoomScheduleProps) {
   // запит всіх кімат
   const { data: rooms = [], isLoading: roomsLoading } = useGetRoomsQuery({});
   const activeRoom = rooms.find((room) => room.id === roomId);
-
 
   // запит розклада
   const from = kyivMinutesToUtc(weekStart, 0).toISOString();

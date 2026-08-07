@@ -8,7 +8,6 @@ const KYIV_TIME_ZONE = 'Europe/Kyiv';
 const BCRYPT_ROUNDS = 12;
 const DAY_MS = 86_400_000;
 
-
 function kyivDay(dayOffset: number): string {
   const now = new Date();
   const isoWeekday = Number(formatInTimeZone(now, KYIV_TIME_ZONE, 'i'));
@@ -42,7 +41,6 @@ async function seed(): Promise<void> {
   );
 
   const roomIdByName = new Map(seededRooms.map((room) => [room.name, room.id]));
-
 
   const existing = await prisma.booking.count();
 

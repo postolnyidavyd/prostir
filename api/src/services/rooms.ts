@@ -38,7 +38,6 @@ export async function listRooms(filter: RoomFilter): Promise<PublicRoom[]> {
     select: { id: true, name: true, imageUrl: true, capacity: true, floor: true },
   });
 
-
   if (filter.from === undefined || filter.to === undefined) {
     return rooms;
   }

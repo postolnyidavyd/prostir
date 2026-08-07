@@ -70,7 +70,6 @@ export async function register(input: RegisterInput, meta: SessionMeta): Promise
 export async function login(input: LoginInput, meta: SessionMeta): Promise<Session> {
   const user = await prisma.user.findUnique({ where: { email: input.email } });
 
-
   if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
     throw new AppError(401, 'Невірний email або пароль');
   }

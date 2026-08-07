@@ -1,6 +1,5 @@
 import { defineConfig } from 'prisma/config';
 
-
 try {
   process.loadEnvFile('../.env');
 } catch {

@@ -115,7 +115,6 @@ const TwoCol = styled.div`
   gap: 0.75rem;
 `;
 
-
 const PickerSlot = styled.div`
   & > * {
     width: 100%;
@@ -317,8 +316,8 @@ function BookingModal({ draft, room, onClose, onCreated, onConflict }: BookingMo
             <WarningIcon />
           </IconBox>
           <ConflictText>
-            Поки ви заповнювали форму, хтось забронював цей слот. Розклад уже оновлено — оберіть інший
-            вільний час.
+            Поки ви заповнювали форму, хтось забронював цей слот. Розклад уже оновлено — оберіть
+            інший вільний час.
           </ConflictText>
           <Button fullWidth onClick={onConflict}>
             Обрати інший час

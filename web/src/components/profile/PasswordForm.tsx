@@ -50,7 +50,9 @@ function PasswordForm() {
       const known = Object.entries(fields).filter(([name]) => FIELDS.includes(name as never));
 
       if (known.length > 0) {
-        known.forEach(([name, message]) => setError(name as keyof ChangePasswordValues, { message }));
+        known.forEach(([name, message]) =>
+          setError(name as keyof ChangePasswordValues, { message }),
+        );
       } else {
         toast.error(apiErrorMessage(error));
       }

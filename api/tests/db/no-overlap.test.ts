@@ -117,7 +117,9 @@ describe('EXCLUDE констрейнт bookings_no_overlap', () => {
       data: { canceledAt: new Date() },
     });
 
-    await expect(book(roomAId, '2026-08-03T07:00:00Z', '2026-08-03T08:00:00Z')).resolves.toBeDefined();
+    await expect(
+      book(roomAId, '2026-08-03T07:00:00Z', '2026-08-03T08:00:00Z'),
+    ).resolves.toBeDefined();
   });
 
   it('два одночасні бронювання на один слот - проходить рівно одне', async () => {

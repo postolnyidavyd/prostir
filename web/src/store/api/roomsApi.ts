@@ -18,7 +18,6 @@ export type RoomsQuery = {
   onlyFree?: boolean;
 };
 
-
 export type RoomFilterOptions = {
   floors: number[];
   maxCapacity: number;

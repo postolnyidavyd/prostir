@@ -10,5 +10,4 @@ describe('formatDisplayName', () => {
   it('ім’я з малої літери піднімається', () => {
     expect(formatDisplayName('давид', 'Постольний')).toBe('Постольний Д.');
   });
-
 });

@@ -4,7 +4,9 @@ import { AppError, ValidationError } from '../lib/errors.js';
 
 // express.json() кидає SyntaxError із власним полем типу, ловимо щоб не летіло в 500
 function isJsonParseError(error: unknown): boolean {
-  return error instanceof SyntaxError && (error as { type?: string }).type === 'entity.parse.failed';
+  return (
+    error instanceof SyntaxError && (error as { type?: string }).type === 'entity.parse.failed'
+  );
 }
 
 export function errorHandler(

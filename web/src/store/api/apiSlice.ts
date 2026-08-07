@@ -4,7 +4,6 @@ import type { FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { logout, selectAccessToken, setAccessToken } from '../authSlice';
 import type { RootState } from '../store';
 
-
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL,
   credentials: 'include',
@@ -18,7 +17,6 @@ const rawBaseQuery = fetchBaseQuery({
 });
 
 type RefreshResponse = { accessToken: string };
-
 
 const AUTH_PATHS = ['/auth/login', '/auth/register'];
 
