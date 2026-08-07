@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 
+import { useRealtimeConnection } from '../lib/useRealtime';
 import Sidebar from './Sidebar';
 
 const Container = styled.div`
@@ -15,6 +16,8 @@ const Main = styled.main`
 `;
 
 function AppLayout() {
+  useRealtimeConnection();
+
   return (
     <Container>
       <Sidebar />

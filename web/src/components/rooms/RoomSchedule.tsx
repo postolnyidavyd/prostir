@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import ChevronLeftIcon from '../../assets/icons/Chevron_Left.svg?react';
 import WarningIcon from '../../assets/icons/Triangle_Warning.svg?react';
 import { toast } from '../../lib/toast';
+import { useRoomChannel } from '../../lib/useRealtime';
 import { addDays, kyivMinutesToUtc, startOfWeek, weekDays } from '../../lib/time';
 import { useRoomFilters } from './useRoomFilters';
 import { useGetRoomBookingsQuery } from '../../store/api/bookingsApi';
@@ -118,10 +119,13 @@ function RoomSchedule({ roomId }: RoomScheduleProps) {
   const to = kyivMinutesToUtc(addDays(weekStart, 7), 0).toISOString();
   const {
     data: bookings = [],
-    isFetching,
+    isLoading,
     isError,
     refetch,
   } = useGetRoomBookingsQuery({ roomId, from, to });
+
+  // оновлення через вебсокет
+  useRoomChannel(roomId, from, to);
 
   // чернетка бронювання
   const [draft, setDraft] = useState<BookingDraft | null>(null);
@@ -142,7 +146,7 @@ function RoomSchedule({ roomId }: RoomScheduleProps) {
         <Button onClick={() => refetch()}>Спробувати ще раз</Button>
       </EmptyState>
     );
-  } else if (isFetching && bookings.length === 0) {
+  } else if (isLoading) {
     content = <WeekGridSkeleton />;
   } else {
     content = (
