@@ -12,7 +12,11 @@ services:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
+      # start_interval швидко пінгує лише під час старту
+      # після готовності перевірка рідка
+      interval: 30s
+      start_period: 30s
+      start_interval: 1s
       timeout: 5s
       retries: 5
 
@@ -24,7 +28,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
-      NODE_ENV: ${NODE_ENV}
+      NODE_ENV: production
       API_PORT: ${API_PORT}
       WEB_ORIGIN: ${WEB_ORIGIN}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
