@@ -62,13 +62,23 @@ type MyBookingsTabsProps = {
 function MyBookingsTabs({ value, counts, onChange }: MyBookingsTabsProps) {
   const upcomingRef = useRef<HTMLButtonElement>(null);
   const pastRef = useRef<HTMLButtonElement>(null);
-  const [thumb, setThumb] = useState<{ left: number; top: number; width: number; height: number }>();
+  const [thumb, setThumb] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  }>();
 
   // позиціюємо плашку під активним табом, бо ширина табів різна через лічильники
   useLayoutEffect(() => {
     const el = value === 'upcoming' ? upcomingRef.current : pastRef.current;
     if (el) {
-      setThumb({ left: el.offsetLeft, top: el.offsetTop, width: el.offsetWidth, height: el.offsetHeight });
+      setThumb({
+        left: el.offsetLeft,
+        top: el.offsetTop,
+        width: el.offsetWidth,
+        height: el.offsetHeight,
+      });
     }
   }, [value, counts.upcoming, counts.past]);
 

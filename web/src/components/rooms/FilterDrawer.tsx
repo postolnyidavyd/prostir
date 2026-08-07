@@ -178,7 +178,12 @@ function FilterDrawer({
 
   return (
     <Overlay onClick={onClose}>
-      <Drawer role="dialog" aria-modal="true" aria-label="Фільтри" onClick={(e) => e.stopPropagation()}>
+      <Drawer
+        role="dialog"
+        aria-modal="true"
+        aria-label="Фільтри"
+        onClick={(e) => e.stopPropagation()}
+      >
         <Top>
           <Header>
             <HeaderTitle>Фільтри</HeaderTitle>

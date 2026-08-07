@@ -32,7 +32,6 @@ export const bookingRangeSchema = z
     path: ['to'],
   });
 
-
 export const myBookingsQuerySchema = z.object({
   scope: z.enum(['upcoming', 'past'], { error: 'scope має бути upcoming або past' }),
   limit: z.preprocess(

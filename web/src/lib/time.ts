@@ -63,7 +63,6 @@ export function isBeforeDay(target: Date, ref: Date): boolean {
   return t.getTime() < r.getTime();
 }
 
-
 export function isSlotPast(date: Date, minutes: number, now: Date = new Date()): boolean {
   return kyivMinutesToUtc(date, minutes).getTime() <= now.getTime();
 }
@@ -157,7 +156,6 @@ export function formatWeekRange(weekStart: Date): string {
 export function formatWeekday(date: Date): string {
   return format(date, 'EEEE', { locale: uk });
 }
-
 
 function toKyiv(iso: string): Date {
   return toZonedTime(new Date(iso), KYIV_TZ);

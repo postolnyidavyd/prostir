@@ -64,7 +64,9 @@ function PersonalDataForm({ user }: { user: User }) {
       const known = Object.entries(fields).filter(([name]) => FIELDS.includes(name as never));
 
       if (known.length > 0) {
-        known.forEach(([name, message]) => setError(name as keyof UpdateProfileValues, { message }));
+        known.forEach(([name, message]) =>
+          setError(name as keyof UpdateProfileValues, { message }),
+        );
       } else {
         toast.error(apiErrorMessage(error));
       }

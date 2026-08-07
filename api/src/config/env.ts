@@ -6,7 +6,7 @@ const envSchema = z.object({
   // z.url() вважає валідним localhost:5173 без протокол, додатковий захист
   WEB_ORIGIN: z
     .url({ protocol: /^https?$/ })
-      //зрізаємо слеш вкінці
+    //зрізаємо слеш вкінці
     .transform((origin) => origin.replace(/\/$/, '')),
   DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//, 'має починатися з postgresql://'),
   JWT_ACCESS_SECRET: z.string().min(32),

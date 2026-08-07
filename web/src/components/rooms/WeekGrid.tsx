@@ -411,12 +411,10 @@ function WeekGrid({
     };
   }, [days]);
 
-
   const isFree = (dayIndex: number, slotIndex: number): boolean => {
     const info = dayInfos[dayIndex];
     return !!info && !info.past[slotIndex] && !info.occupied[slotIndex];
   };
-
 
   // найдальший суміжний вільний слот від anchor у бік target (тобто 4 год або якщо кінець робочого дня раніше то менше)
   const reachableSlot = (dayIndex: number, anchor: number, target: number): number => {

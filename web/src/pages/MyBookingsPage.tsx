@@ -94,8 +94,7 @@ function MyBookingsPage() {
     past: past.data?.pages[0]?.total ?? 0,
   };
 
-  const cancel = (booking: MyBooking) =>
-    requestCancel({ id: booking.id, roomId: booking.room.id });
+  const cancel = (booking: MyBooking) => requestCancel({ id: booking.id, roomId: booking.room.id });
 
   const renderRows = (items: MyBooking[]) =>
     items.map((booking) => (
@@ -145,7 +144,9 @@ function MyBookingsPage() {
         />
       );
   } else if (scope === 'upcoming') {
-    const today = bookings.filter((booking) => isSameDay(new Date(booking.startsAt), new Date(now)));
+    const today = bookings.filter((booking) =>
+      isSameDay(new Date(booking.startsAt), new Date(now)),
+    );
     const later = bookings.filter(
       (booking) => !isSameDay(new Date(booking.startsAt), new Date(now)),
     );

@@ -17,7 +17,12 @@ authRouter.post('/login', validate({ body: loginSchema }), authController.login)
 authRouter.post('/refresh', authController.refresh);
 authRouter.post('/logout', authController.logout);
 authRouter.get('/me', authGuard, authController.me);
-authRouter.patch('/me', authGuard, validate({ body: updateProfileSchema }), authController.updateMe);
+authRouter.patch(
+  '/me',
+  authGuard,
+  validate({ body: updateProfileSchema }),
+  authController.updateMe,
+);
 authRouter.patch(
   '/me/password',
   authGuard,

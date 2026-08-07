@@ -80,7 +80,15 @@ type BookingBlockProps = {
   onCancel?: () => void;
 };
 
-function BookingBlock({ title, timeLabel, person, mine, top, height, onCancel }: BookingBlockProps) {
+function BookingBlock({
+  title,
+  timeLabel,
+  person,
+  mine,
+  top,
+  height,
+  onCancel,
+}: BookingBlockProps) {
   const clickable = !!onCancel;
   return (
     <Block

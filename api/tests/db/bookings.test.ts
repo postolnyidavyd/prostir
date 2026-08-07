@@ -163,9 +163,9 @@ describe('GET /rooms', () => {
       .get(`/rooms?from=${next.startsAt}&to=${next.endsAt}`)
       .set('Authorization', `Bearer ${ownerToken}`);
 
-    expect(
-      response.body.rooms.find((room: { id: string }) => room.id === roomAId).available,
-    ).toBe(true);
+    expect(response.body.rooms.find((room: { id: string }) => room.id === roomAId).available).toBe(
+      true,
+    );
   });
 
   it('onlyFree приховує зайняті', async () => {
@@ -351,7 +351,6 @@ describe('GET /rooms/:id/bookings', () => {
 describe('GET /bookings/my', () => {
   const myBookings = (query: string, token = ownerToken) =>
     request(app).get(`/bookings/my?${query}`).set('Authorization', `Bearer ${token}`);
-
 
   const pastBooking = (hoursAgo: number) =>
     prisma.booking.create({

@@ -36,7 +36,6 @@ export type IntervalIssue = 'NOT_ALIGNED' | 'BAD_DURATION' | 'OUTSIDE_WORKING_HO
 
 export type IntervalCheck = { ok: true } | { ok: false; reason: IntervalIssue };
 
-
 function isAlignedToSlot(date: Date): boolean {
   return date.getTime() % (SLOT_MINUTES * MS_IN_MINUTE) === 0;
 }
@@ -62,17 +61,13 @@ function isWithinWorkingHours(startsAt: Date, endsAt: Date): boolean {
   const end = toKyivDayAndMinutes(endsAt);
 
   return (
-    start.day === end.day &&
-    start.minutes >= WORK_START_MINUTES &&
-    end.minutes <= WORK_END_MINUTES
+    start.day === end.day && start.minutes >= WORK_START_MINUTES && end.minutes <= WORK_END_MINUTES
   );
 }
 
 export function isInFuture(date: Date, now: Date): boolean {
   return date.getTime() > now.getTime();
 }
-
-
 
 export function validateBookingInterval(startsAt: Date, endsAt: Date, now: Date): IntervalCheck {
   if (!isAlignedToSlot(startsAt) || !isAlignedToSlot(endsAt)) {

@@ -19,8 +19,7 @@ export function isUniqueViolation(error: unknown): boolean {
 // тож розрізняємо за іменем констрейнта
 export function isForeignKeyViolation(error: unknown, constraint: string): boolean {
   return (
-    (error as PrismaErrorShape).code === 'P2003' &&
-    cause(error)?.constraint?.index === constraint
+    (error as PrismaErrorShape).code === 'P2003' && cause(error)?.constraint?.index === constraint
   );
 }
 
