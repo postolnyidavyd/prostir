@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 import AddIcon from '../../assets/icons/Add_Plus.svg?react';
 import InfoIcon from '../../assets/icons/Info.svg?react';
 import {
-  MAX_DURATION_MIN,
   SLOT_MIN,
   WORK_END_MIN,
   WORK_START_MIN,
@@ -23,16 +22,13 @@ import { text } from '../../styles/typography';
 import Button from '../ui/Button';
 import BookingBlock from './BookingBlock';
 import type { BookingDraft } from './BookingModal';
+import { useSlotSelection } from './useSlotSelection';
+import { SLOT_COUNT, SLOTS } from './weekGrid.constants';
 
-const SLOT_COUNT = (WORK_END_MIN - WORK_START_MIN) / SLOT_MIN; // 20
-const MAX_SLOTS = MAX_DURATION_MIN / SLOT_MIN; // 8
 const ROW_H = 3.25; // rem на 30хв слот
 const AXIS_W = '2.75rem';
-// всі слоти від 9 до 19
-const SLOTS = Array.from({ length: SLOT_COUNT }, (_, i) => WORK_START_MIN + i * SLOT_MIN);
 const COLUMNS = `${AXIS_W} repeat(7, minmax(0, 1fr))`;
 
-type Selection = { dayIndex: number; r1: number; r2: number; anchor: number };
 type DayEvent = { booking: RoomBooking; startMin: number; endMin: number };
 type DayInfo = { past: boolean[]; occupied: boolean[]; events: DayEvent[] };
 
@@ -347,21 +343,7 @@ function WeekGrid({
   highlightTo,
   resetToken,
 }: WeekGridProps) {
-  const [sel, setSel] = useState<Selection | null>(null);
-  const draggingRef = useRef(false);
   const bodyRef = useRef<HTMLDivElement>(null);
-
-  //завершення перетягування
-  useEffect(() => {
-    const up = () => {
-      draggingRef.current = false;
-    };
-    window.addEventListener('pointerup', up);
-    return () => window.removeEventListener('pointerup', up);
-  }, []);
-
-  //ресетимо селектіон на зміну днів або на інкремент resetToken
-  useEffect(() => setSel(null), [days, resetToken]);
 
   // автопрокрутка до часу з фільтрів
   useEffect(() => {
@@ -416,73 +398,14 @@ function WeekGrid({
     return !!info && !info.past[slotIndex] && !info.occupied[slotIndex];
   };
 
-  // найдальший суміжний вільний слот від anchor у бік target (тобто 4 год або якщо кінець робочого дня раніше то менше)
-  const reachableSlot = (dayIndex: number, anchor: number, target: number): number => {
-    const dir = Math.sign(target - anchor) || 1;
-    let last = anchor;
-    for (let r = anchor; r >= 0 && r < SLOT_COUNT; r += dir) {
-      if (!isFree(dayIndex, r)) break;
-      if (Math.abs(r - anchor) + 1 > MAX_SLOTS) break;
-      last = r;
-      if (r === target) break;
-    }
-    return last;
-  };
-
-  const handleDown = (dayIndex: number, slotIndex: number, free: boolean) => {
-    // зайнятий слот - скинули вибір
-    if (!free) {
-      setSel(null);
-      return;
-    }
-    // перевірка чи буде розширення наявного селектіона чи починаємо новий
-    //1 - існує, 2 - той самий день, 3 - на 1 менше чи більше поточного вибору, 4 - не більше 4 годин
-    if (
-      sel &&
-      sel.dayIndex === dayIndex &&
-      (slotIndex === sel.r1 - 1 || slotIndex === sel.r2 + 1) &&
-      sel.r2 - sel.r1 + 2 <= MAX_SLOTS
-    ) {
-      const r1 = Math.min(sel.r1, slotIndex);
-      const r2 = Math.max(sel.r2, slotIndex);
-      //ставимо anchor на протилежний кінець щоб якщо захочу реалізувати логіку з низу reachebleSlot не ламався
-      setSel({ dayIndex, r1, r2, anchor: slotIndex === r1 ? r2 : r1 });
-      // МОЖЛИВО ДОДАТИ ЩО ПРИ РОЗШИРЕННІ ДАТИ МОЖЛИВІСТЬ ДРАГУ АЛЕ ТОЧНО ТРЕБА ВИРІШИТИ
-      // draggingRef.current = true;
-      return;
-    }
-    // починаємо новий вибір
-    setSel({ dayIndex, r1: slotIndex, r2: slotIndex, anchor: slotIndex });
-    draggingRef.current = true;
-  };
-
-  // збільшення селекту на драг
-  const handleEnter = (dayIndex: number, slotIndex: number) => {
-    if (!draggingRef.current || !sel || sel.dayIndex !== dayIndex) return;
-    const reached = reachableSlot(dayIndex, sel.anchor, slotIndex);
-    setSel({ ...sel, r1: Math.min(sel.anchor, reached), r2: Math.max(sel.anchor, reached) });
-  };
+  const { sel, selDay, selStartMin, selEndMin, handleDown, handleEnter, startCreate, clear } =
+    useSlotSelection({ days, isFree, resetToken, onCreate });
 
   const nowIso = new Date().toISOString();
   const nowMin = kyivMinutesOfDay(nowIso);
   const todayInWeek = days.some((day) => isSameKyivDay(nowIso, day));
   const showNow = todayInWeek && nowMin >= WORK_START_MIN && nowMin <= WORK_END_MIN;
   const nowTop = ((nowMin - WORK_START_MIN) / SLOT_MIN) * ROW_H;
-
-  const selDay = sel ? days[sel.dayIndex] : undefined;
-  const selStartMin = sel ? SLOTS[sel.r1]! : 0;
-  const selEndMin = sel ? SLOTS[sel.r2]! + SLOT_MIN : 0;
-
-  const startCreate = () => {
-    if (!sel || !selDay || !onCreate) return;
-    const maxReach = reachableSlot(sel.dayIndex, sel.r1, SLOT_COUNT - 1);
-    onCreate({
-      day: selDay,
-      startMin: selStartMin,
-      endMin: selEndMin,
-      maxEndMin: SLOTS[maxReach]! + SLOT_MIN,
-    });
-  };
 
   return (
     <Wrap>
@@ -605,7 +528,7 @@ function WeekGrid({
             <Button size="sm" onClick={startCreate}>
               Продовжити бронювання
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => setSel(null)}>
+            <Button variant="secondary" size="sm" onClick={clear}>
               Скасувати
             </Button>
           </SelActions>
