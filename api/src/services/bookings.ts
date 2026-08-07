@@ -3,6 +3,7 @@ import { isBookingOverlap, isForeignKeyViolation } from '../db/errors.js';
 import { AppError } from '../lib/errors.js';
 import { formatDisplayName } from '../lib/names.js';
 import { isInFuture, validateBookingInterval, type IntervalIssue } from '../lib/time.js';
+import { publishRoomChange } from '../realtime/hub.js';
 import type { BookingRange, CreateBookingInput, MyBookingsQuery } from '../schemas/booking.js';
 
 const INTERVAL_MESSAGES: Record<IntervalIssue, string> = {
@@ -184,6 +185,9 @@ export async function createBooking(
       select: bookingFields,
     });
 
+    // розклад цієї кімнати змінився - надсилаємо сигнал
+    publishRoomChange({ roomId: input.roomId, startsAt: booking.startsAt, endsAt: booking.endsAt });
+
     return toPublicBooking(booking);
   } catch (error) {
     // перетини забороняє констрейнт, додаткова перевірка не допомогає при гонці
@@ -208,7 +212,7 @@ export async function createBooking(
 export async function cancelBooking(userId: string, bookingId: string): Promise<void> {
   const booking = await prisma.booking.findFirst({
     where: { id: bookingId, canceledAt: null },
-    select: { id: true, userId: true, startsAt: true },
+    select: { id: true, userId: true, roomId: true, startsAt: true, endsAt: true },
   });
 
   if (!booking) {
@@ -232,4 +236,7 @@ export async function cancelBooking(userId: string, bookingId: string): Promise<
   if (canceled.count === 0) {
     throw new AppError(404, 'Бронювання не знайдено');
   }
+
+  // слот звільнився - надсилаємо сигнал
+  publishRoomChange({ roomId: booking.roomId, startsAt: booking.startsAt, endsAt: booking.endsAt });
 }
