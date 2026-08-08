@@ -6,6 +6,7 @@ import { useZodForm } from '../../lib/useZodForm';
 import { updateProfileSchema, type UpdateProfileValues } from '../../lib/validation/profile';
 import { useUpdateProfileMutation } from '../../store/api/authApi';
 import type { User } from '../../store/authSlice';
+import { media } from '../../styles/media';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import SectionCard from './SectionCard';
@@ -25,6 +26,10 @@ const Fields = styled.div`
 const Row = styled.div`
   display: flex;
   gap: 0.75rem;
+
+  ${media.phone} {
+    flex-direction: column;
+  }
 `;
 
 const EmailGroup = styled.div`

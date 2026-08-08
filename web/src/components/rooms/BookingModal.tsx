@@ -17,6 +17,7 @@ import {
 } from '../../lib/time';
 import { useCreateBookingMutation } from '../../store/api/bookingsApi';
 import type { Room } from '../../store/api/roomsApi';
+import { media } from '../../styles/media';
 import { text } from '../../styles/typography';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -41,6 +42,11 @@ const Card = styled.div`
   border: 2px solid var(--base-bright-grey);
   border-radius: 1.25rem;
   box-shadow: var(--shadow);
+
+  ${media.phone} {
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
 `;
 
 const Head = styled.div`
@@ -211,6 +217,11 @@ const Actions = styled.div`
   display: grid;
   grid-template-columns: 1.5fr 2fr;
   gap: 0.25rem;
+
+  ${media.phone} {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
 `;
 
 // помітний стан 409 — слот перехопили поки заповнювали форму

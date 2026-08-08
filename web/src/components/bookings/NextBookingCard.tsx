@@ -5,6 +5,7 @@ import ClockIcon from '../../assets/icons/Clock.svg?react';
 import { humanizeDuration } from '../../lib/relativeTime';
 import { formatBookingDay, formatTime, isSameDay } from '../../lib/time';
 import type { CurrentBooking } from '../../store/api/bookingsApi';
+import { media } from '../../styles/media';
 import Button from '../ui/Button';
 import { scheduleLinkFor } from './scheduleLink';
 
@@ -30,6 +31,12 @@ const Card = styled.article<{ $running: boolean }>`
     width: 1.1875rem;
     background-color: ${({ $running }) =>
       $running ? 'var(--malachite-100)' : 'var(--accent-color-intense)'};
+  }
+
+  ${media.phone} {
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.25rem 1.25rem 1.25rem 1.75rem;
   }
 `;
 
@@ -106,12 +113,23 @@ const Right = styled.div`
   align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
+
+  ${media.phone} {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+  }
 `;
 
 const Countdown = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+
+  ${media.phone} {
+    align-items: flex-start;
+  }
 `;
 
 const Big = styled.span`

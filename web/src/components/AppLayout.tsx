@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { useRealtimeConnection } from '../lib/useRealtime';
+import MobileNav from './MobileNav';
 import Sidebar from './Sidebar';
 
 const Container = styled.div`
@@ -22,6 +23,7 @@ function AppLayout() {
     <Container>
       <Sidebar />
       <Main>
+        <MobileNav />
         <Outlet />
       </Main>
     </Container>

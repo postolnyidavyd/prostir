@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 
+import { media } from '../../styles/media';
 import LinkButton from './LinkButton';
 import { Container } from './primitives';
 
@@ -7,6 +8,10 @@ const HERO_IMAGE = '/landing-hero-new.png';
 
 const Section = styled.section`
   padding: 5.5rem 0 6rem;
+
+  ${media.phone} {
+    padding: 2.5rem 0 3rem;
+  }
 `;
 
 const Layout = styled.div`
@@ -31,6 +36,12 @@ const Heading = styled.h1`
   line-height: 4.243125rem;
   letter-spacing: -0.0831875rem;
   color: var(--primary-black);
+
+  ${media.phone} {
+    font-size: 2.25rem;
+    line-height: 2.7rem;
+    letter-spacing: -0.045rem;
+  }
 `;
 
 const Accent = styled.span`
@@ -44,6 +55,11 @@ const Paragraph = styled.p`
   font-size: 1.125rem;
   line-height: 1.86rem;
   color: var(--secondary-text);
+
+  ${media.phone} {
+    font-size: 1rem;
+    line-height: 1.6rem;
+  }
 `;
 
 const Frame = styled.div`
