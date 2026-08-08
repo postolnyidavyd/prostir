@@ -2,12 +2,15 @@ import { useEffect, useMemo, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 import AddIcon from '../../assets/icons/Add_Plus.svg?react';
+import ChevronLeftIcon from '../../assets/icons/Chevron_Left.svg?react';
+import ChevronRightIcon from '../../assets/icons/Chevron_Right.svg?react';
 import InfoIcon from '../../assets/icons/Info.svg?react';
 import {
   SLOT_MIN,
   WORK_END_MIN,
   WORK_START_MIN,
   browserGmtLabel,
+  formatDateLabel,
   formatDuration,
   formatWeekday,
   isKyivTimeZone,
@@ -17,7 +20,9 @@ import {
   kyivMinutesToUtc,
   slotLabel,
 } from '../../lib/time';
+import { useIsMobile } from '../../lib/useIsMobile';
 import type { RoomBooking } from '../../store/api/bookingsApi';
+import { media } from '../../styles/media';
 import { text } from '../../styles/typography';
 import Button from '../ui/Button';
 import BookingBlock from './BookingBlock';
@@ -31,6 +36,21 @@ const COLUMNS = `${AXIS_W} repeat(7, minmax(0, 1fr))`;
 
 type DayEvent = { booking: RoomBooking; startMin: number; endMin: number };
 type DayInfo = { past: boolean[]; occupied: boolean[]; events: DayEvent[] };
+
+type NowLine = { show: boolean; top: number };
+
+
+function computeNowLine(days: Date[], activeDay: Date | undefined, isMobile: boolean): NowLine {
+  const nowIso = new Date().toISOString();
+  const nowMin = kyivMinutesOfDay(nowIso);
+  const todayVisible = isMobile
+    ? !!activeDay && isSameKyivDay(nowIso, activeDay)
+    : days.some((day) => isSameKyivDay(nowIso, day));
+  return {
+    show: todayVisible && nowMin >= WORK_START_MIN && nowMin <= WORK_END_MIN,
+    top: ((nowMin - WORK_START_MIN) / SLOT_MIN) * ROW_H,
+  };
+}
 
 const Wrap = styled.div`
   display: flex;
@@ -124,15 +144,65 @@ const Weekday = styled.span`
   color: var(--secondary-text);
 `;
 
+const MobileHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--base-bright-grey);
+`;
+
+const DaySwitch = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+`;
+
+const SwitchBtn = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem;
+  border: 1px solid var(--base-bright-grey);
+  border-radius: 0.5rem;
+  background-color: var(--base-white);
+  color: var(--primary-black);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  svg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  &:hover {
+    background-color: var(--primary-grey);
+  }
+`;
+
+const DayLabel = styled.span`
+  min-width: 6.5rem;
+  text-align: center;
+  text-transform: capitalize;
+  ${text.h7};
+  color: var(--primary-black);
+`;
+
 const Body = styled.div`
   overflow-y: auto;
   max-height: calc(100dvh - 15rem);
+
+  ${media.phone} {
+    /* запас під фіксовану панель вибору, щоб нижні слоти можна було доскролити над нею */
+    padding-bottom: 6rem;
+  }
 `;
 
-const Cols = styled.div`
+const Cols = styled.div<{ $columns: string }>`
   position: relative;
   display: grid;
-  grid-template-columns: ${COLUMNS};
+  grid-template-columns: ${({ $columns }) => $columns};
   user-select: none;
 `;
 
@@ -295,6 +365,16 @@ const SelBar = styled.div`
   border: 1px solid var(--grey-border);
   border-radius: 1.25rem;
   box-shadow: var(--shadow);
+
+  ${media.phone} {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    transform: none;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem;
+  }
 `;
 
 const SelInfo = styled.div`
@@ -316,6 +396,14 @@ const SelDur = styled.span`
 const SelActions = styled.div`
   display: flex;
   gap: 0.625rem;
+
+  ${media.phone} {
+    flex: 1;
+
+    & > * {
+      flex: 1;
+    }
+  }
 `;
 
 type WeekGridProps = {
@@ -330,6 +418,10 @@ type WeekGridProps = {
   highlightTo?: number;
   // зміна значення скидає активний вибір
   resetToken?: number;
+  // мобільний режим лише з одним днем
+  activeDayIndex?: number;
+  onPrevDay?: () => void;
+  onNextDay?: () => void;
 };
 
 function WeekGrid({
@@ -342,8 +434,21 @@ function WeekGrid({
   highlightFrom,
   highlightTo,
   resetToken,
+  activeDayIndex,
+  onPrevDay,
+  onNextDay,
 }: WeekGridProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+
+  // на мобілці показуємо лише активний день, на десктопі весь тиждень
+  //нормалізація індексу
+  const safeActiveIndex = Math.min(Math.max(activeDayIndex ?? 0, 0), days.length - 1);
+  //індекси які видно
+  const visibleDayIndices = isMobile ? [safeActiveIndex] : days.map((_, index) => index);
+  // шаблон колонок
+  const columns = `${AXIS_W} repeat(${visibleDayIndices.length}, minmax(0, 1fr))`;
+  const activeDay = days[safeActiveIndex];
 
   // автопрокрутка до часу з фільтрів
   useEffect(() => {
@@ -401,41 +506,55 @@ function WeekGrid({
   const { sel, selDay, selStartMin, selEndMin, handleDown, handleEnter, startCreate, clear } =
     useSlotSelection({ days, isFree, resetToken, onCreate });
 
-  const nowIso = new Date().toISOString();
-  const nowMin = kyivMinutesOfDay(nowIso);
-  const todayInWeek = days.some((day) => isSameKyivDay(nowIso, day));
-  const showNow = todayInWeek && nowMin >= WORK_START_MIN && nowMin <= WORK_END_MIN;
-  const nowTop = ((nowMin - WORK_START_MIN) / SLOT_MIN) * ROW_H;
+  const nowLine = computeNowLine(days, activeDay, isMobile);
 
   return (
     <Wrap>
-      <HeaderRow>
-        <Corner>
+      {isMobile ? (
+        <MobileHeader>
+          <DaySwitch>
+            <SwitchBtn type="button" onClick={onPrevDay} aria-label="Попередній день">
+              <ChevronLeftIcon />
+            </SwitchBtn>
+            <DayLabel>{activeDay ? formatDateLabel(activeDay) : ''}</DayLabel>
+            <SwitchBtn type="button" onClick={onNextDay} aria-label="Наступний день">
+              <ChevronRightIcon />
+            </SwitchBtn>
+          </DaySwitch>
           <Gmt $warn={!isKyivTimeZone()}>
             <InfoIcon />
             {browserGmtLabel()}
           </Gmt>
-          <Tooltip>
-            {isKyivTimeZone()
-              ? 'Ваш пояс збігається з київським. Слоти показані за Києвом, робочі години 09:00–19:00.'
-              : `Ваш час — ${browserGmtLabel()}, він відрізняється від київського. Слоти показані у вашому поясі, але робочі години рахуються за Києвом (09:00–19:00).`}
-          </Tooltip>
-        </Corner>
-        {days.map((day) => {
-          const weekday = formatWeekday(day);
-          return (
-            <DayHead key={day.toISOString()}>
-              <DayNum $mark={!!highlightDay && isSameDay(day, highlightDay)}>
-                {day.getDate()}
-              </DayNum>
-              <Weekday>{weekday.charAt(0).toUpperCase() + weekday.slice(1)}</Weekday>
-            </DayHead>
-          );
-        })}
-      </HeaderRow>
+        </MobileHeader>
+      ) : (
+        <HeaderRow>
+          <Corner>
+            <Gmt $warn={!isKyivTimeZone()}>
+              <InfoIcon />
+              {browserGmtLabel()}
+            </Gmt>
+            <Tooltip>
+              {isKyivTimeZone()
+                ? 'Ваш пояс збігається з київським. Слоти показані за Києвом, робочі години 09:00–19:00.'
+                : `Ваш час — ${browserGmtLabel()}, він відрізняється від київського. Слоти показані у вашому поясі, але робочі години рахуються за Києвом (09:00–19:00).`}
+            </Tooltip>
+          </Corner>
+          {days.map((day) => {
+            const weekday = formatWeekday(day);
+            return (
+              <DayHead key={day.toISOString()}>
+                <DayNum $mark={!!highlightDay && isSameDay(day, highlightDay)}>
+                  {day.getDate()}
+                </DayNum>
+                <Weekday>{weekday.charAt(0).toUpperCase() + weekday.slice(1)}</Weekday>
+              </DayHead>
+            );
+          })}
+        </HeaderRow>
+      )}
 
       <Body ref={bodyRef}>
-        <Cols>
+        <Cols $columns={columns}>
           <Axis>
             {SLOTS.map((min, i) => (
               <TimeCell key={min} $highlight={inHighlight(min)}>
@@ -445,7 +564,9 @@ function WeekGrid({
             <EndTimeCell>{axisLabels.end}</EndTimeCell>
           </Axis>
 
-          {days.map((day, dayIndex) => {
+          {visibleDayIndices.map((dayIndex) => {
+            const day = days[dayIndex];
+            if (!day) return null;
             const info = dayInfos[dayIndex];
             const dayHighlighted = !!highlightDay && isSameDay(day, highlightDay);
             return (
@@ -459,8 +580,11 @@ function WeekGrid({
                       $past={past}
                       $free={free}
                       $highlight={!past && dayHighlighted && inHighlight(min)}
-                      onPointerDown={() => handleDown(dayIndex, slotIndex, free)}
-                      onPointerEnter={() => handleEnter(dayIndex, slotIndex)}
+                      onPointerDown={
+                        isMobile ? undefined : () => handleDown(dayIndex, slotIndex, free)
+                      }
+                      onPointerEnter={isMobile ? undefined : () => handleEnter(dayIndex, slotIndex)}
+                      onClick={isMobile ? () => handleDown(dayIndex, slotIndex, free) : undefined}
                     >
                       {free && !sel && (
                         <CellHint>
@@ -507,8 +631,8 @@ function WeekGrid({
             );
           })}
 
-          {showNow && (
-            <Now style={{ top: `${nowTop}rem` }}>
+          {nowLine.show && (
+            <Now style={{ top: `${nowLine.top}rem` }}>
               <NowLabel>зараз</NowLabel>
               <NowRule />
             </Now>
