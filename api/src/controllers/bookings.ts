@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express';
 
+import { env } from '../config/env.js';
 import { requireUserId } from '../middleware/auth-guard.js';
 import type { BookingRange, CreateBookingInput, MyBookingsQuery } from '../schemas/booking.js';
 import type { IdParam } from '../schemas/common.js';
@@ -21,6 +22,16 @@ export const listMine: RequestHandler<unknown, unknown, unknown, MyBookingsQuery
 
 export const currentMine: RequestHandler = async (req, res) => {
   res.json({ booking: await bookingsService.getCurrentBooking(requireUserId(req)) });
+};
+
+export const endReminderMine: RequestHandler = async (req, res) => {
+  const reminder = await bookingsService.getEndReminder(
+    requireUserId(req),
+    env.NOTIFY_BEFORE_MINUTES,
+    new Date(),
+  );
+
+  res.json({ reminder });
 };
 
 export const create: RequestHandler<unknown, unknown, CreateBookingInput> = async (req, res) => {

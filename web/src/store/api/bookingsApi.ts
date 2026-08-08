@@ -26,6 +26,14 @@ export type CurrentBooking = {
   room: { id: string; name: string; floor: number; capacity: number };
 };
 
+export type EndReminder = {
+  bookingId: string;
+  title: string;
+  roomName: string;
+  endsAt: string;
+  minutes: number;
+};
+
 type MyBookingsPage = { bookings: MyBooking[]; nextCursor: string | null; total: number };
 
 type RoomBookingsQuery = { roomId: string; from: string; to: string };
@@ -68,6 +76,13 @@ const bookingsApi = apiSlice.injectEndpoints({
       providesTags: ['MyBookings'],
     }),
 
+    // нагадування звільнити кімнату
+    getEndReminder: builder.query<EndReminder | null, void>({
+      query: () => '/bookings/my/end-reminder',
+      transformResponse: (response: { reminder: EndReminder | null }) => response.reminder,
+      providesTags: ['MyBookings'],
+    }),
+
     getMyBookings: builder.infiniteQuery<MyBookingsPage, BookingScope, string | undefined>({
       infiniteQueryOptions: {
         initialPageParam: undefined,
@@ -87,6 +102,7 @@ export const {
   useCreateBookingMutation,
   useCancelBookingMutation,
   useGetCurrentBookingQuery,
+  useGetEndReminderQuery,
   useGetMyBookingsInfiniteQuery,
 } = bookingsApi;
 export default bookingsApi;

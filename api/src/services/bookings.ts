@@ -115,6 +115,49 @@ export type MyBookingsPage = {
   total: number;
 };
 
+export type EndReminder = {
+  bookingId: string;
+  title: string;
+  roomName: string;
+  endsAt: Date;
+  minutes: number;
+};
+
+// нагадування звільнити кімнату користувачу чиє бронювання триває,
+// і у тій же кімнаті в когось інше активне, ми повертаємо для якого бронювання треба
+// фронт сам показує нагадування
+export async function getEndReminder(
+  userId: string,
+  beforeMinutes: number,
+  now: Date,
+): Promise<EndReminder | null> {
+  const running = await prisma.booking.findMany({
+    where: { userId, canceledAt: null, startsAt: { lte: now }, endsAt: { gt: now } },
+    orderBy: { endsAt: 'asc' },
+    select: { id: true, title: true, endsAt: true, roomId: true, room: { select: { name: true } } },
+  });
+
+  for (const booking of running) {
+    // сусід впритул
+    const next = await prisma.booking.findFirst({
+      where: { roomId: booking.roomId, canceledAt: null, startsAt: booking.endsAt },
+      select: { id: true },
+    });
+
+    if (next) {
+      return {
+        bookingId: booking.id,
+        title: booking.title,
+        roomName: booking.room.name,
+        endsAt: booking.endsAt,
+        minutes: beforeMinutes,
+      };
+    }
+  }
+
+  return null;
+}
+
 // поточне, що триває зараз або найближче майбутнє бронювання
 export async function getCurrentBooking(userId: string): Promise<CurrentBooking | null> {
   return prisma.booking.findFirst({

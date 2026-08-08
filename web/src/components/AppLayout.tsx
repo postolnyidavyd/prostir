@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 
+import { useEndReminder } from '../lib/useEndReminder';
 import { useRealtimeConnection } from '../lib/useRealtime';
 import MobileNav from './MobileNav';
 import Sidebar from './Sidebar';
@@ -18,6 +19,7 @@ const Main = styled.main`
 
 function AppLayout() {
   useRealtimeConnection();
+  useEndReminder();
 
   return (
     <Container>
