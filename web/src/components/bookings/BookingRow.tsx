@@ -3,6 +3,7 @@ import styled from 'styled-components';
 
 import { formatBookingDay, formatDuration, formatTime } from '../../lib/time';
 import type { BookingScope, MyBooking } from '../../store/api/bookingsApi';
+import { media } from '../../styles/media';
 import Button from '../ui/Button';
 import { scheduleLinkFor } from './scheduleLink';
 import StatusBadge from './StatusBadge';
@@ -28,6 +29,13 @@ const Row = styled.article`
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
     transform: translateY(-0.125rem);
   }
+
+  ${media.phone} {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.875rem;
+    padding: 1rem 1.125rem;
+  }
 `;
 
 const Left = styled.div`
@@ -35,6 +43,10 @@ const Left = styled.div`
   align-items: center;
   gap: 2rem;
   min-width: 0;
+
+  ${media.phone} {
+    gap: 1rem;
+  }
 `;
 
 const TimeCol = styled.div`
@@ -100,6 +112,10 @@ const Right = styled.div`
   align-items: center;
   gap: 1rem;
   flex-shrink: 0;
+
+  ${media.phone} {
+    justify-content: space-between;
+  }
 `;
 
 type BookingRowProps = {

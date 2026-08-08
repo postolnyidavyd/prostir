@@ -1,6 +1,7 @@
 import styled from 'styled-components';
 
 import Logo from '../../assets/Logo.svg?react';
+import { media } from '../../styles/media';
 import LinkButton from './LinkButton';
 
 const Bar = styled.header`
@@ -21,6 +22,10 @@ const Container = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 0 2rem;
+
+  ${media.phone} {
+    padding: 0 1rem;
+  }
 `;
 
 const Brand = styled.div`
@@ -36,12 +41,24 @@ const BrandName = styled.span`
   line-height: 2.0625rem;
   letter-spacing: -0.01375rem;
   color: var(--primary-black);
+
+  ${media.phone} {
+    display: none;
+  }
 `;
 
 const Actions = styled.div`
   display: flex;
   align-items: center;
   gap: 0.75rem;
+
+  ${media.phone} {
+    gap: 0.5rem;
+
+    a {
+      padding: 0 0.875rem;
+    }
+  }
 `;
 
 function LandingHeader() {

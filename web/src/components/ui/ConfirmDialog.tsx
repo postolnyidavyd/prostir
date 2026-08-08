@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import styled from 'styled-components';
 
 import CloseIcon from '../../assets/icons/Close_SM.svg?react';
+import { media } from '../../styles/media';
 import { text } from '../../styles/typography';
 import Button from './Button';
 import Modal from './Modal';
@@ -17,6 +18,11 @@ const Card = styled.div`
   border: 1px solid var(--base-bright-grey);
   border-radius: 1.25rem;
   box-shadow: var(--shadow);
+
+  ${media.phone} {
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
 `;
 
 const CloseRow = styled.div`
@@ -72,6 +78,11 @@ const Actions = styled.div`
   grid-template-columns: 1.5fr 2fr;
   gap: 0.25rem;
   width: 100%;
+
+  ${media.phone} {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
 `;
 
 type ConfirmDialogProps = {
