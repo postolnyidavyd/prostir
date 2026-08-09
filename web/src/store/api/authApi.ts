@@ -74,6 +74,10 @@ const authApi = apiSlice.injectEndpoints({
         dispatch(setAccessToken(data.accessToken));
       },
     }),
+
+    verifyEmail: builder.mutation<void, { token: string }>({
+      query: (body) => ({ url: '/auth/verify-email', method: 'POST', body }),
+    }),
   }),
 });
 
@@ -84,5 +88,6 @@ export const {
   useLogoutMutation,
   useUpdateProfileMutation,
   useChangePasswordMutation,
+  useVerifyEmailMutation,
 } = authApi;
 export default authApi;

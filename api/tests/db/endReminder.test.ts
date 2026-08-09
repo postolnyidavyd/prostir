@@ -22,7 +22,6 @@ async function registerUser(email: string) {
   return { token: response.body.accessToken as string, id: response.body.user.id as string };
 }
 
-
 function create(opts: { userId: string; startsAt: Date; endsAt: Date; canceled?: boolean }) {
   return prisma.booking.create({
     data: {

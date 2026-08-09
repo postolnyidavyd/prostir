@@ -6,7 +6,7 @@ import { env } from '../config/env.js';
 import { prisma } from '../db/client.js';
 import { AppError } from '../lib/errors.js';
 import { expiresAt } from '../lib/time.js';
-import { hashRefreshToken } from '../lib/tokens.js';
+import { hashToken } from '../lib/tokens.js';
 
 export type SessionMeta = {
   ipAddress?: string | undefined;
@@ -54,7 +54,7 @@ export async function createRefreshSession(userId: string, meta: SessionMeta): P
   await prisma.refreshToken.create({
     data: {
       userId,
-      tokenHash: hashRefreshToken(token),
+      tokenHash: hashToken(token),
       expiresAt: refreshTokenExpiresAt(new Date()),
       ipAddress: meta.ipAddress ?? null,
       userAgent: meta.userAgent ?? null,
@@ -74,7 +74,7 @@ export async function revokeAllSessions(userId: string): Promise<void> {
 export async function rotateRefreshSession(
   token: string,
 ): Promise<{ userId: string; token: string }> {
-  const tokenHash = hashRefreshToken(token);
+  const tokenHash = hashToken(token);
   const session = await prisma.refreshToken.findUnique({ where: { tokenHash } });
 
   // токена немає серед активних - можливо це вже використана копія, тобто крадіжка
@@ -97,7 +97,7 @@ export async function rotateRefreshSession(
   // умова на tokenHash робить цю ротанцію атомарною
   const rotated = await prisma.refreshToken.updateMany({
     where: { id: session.id, tokenHash },
-    data: { tokenHash: hashRefreshToken(nextToken), previousTokenHash: tokenHash },
+    data: { tokenHash: hashToken(nextToken), previousTokenHash: tokenHash },
   });
 
   if (rotated.count === 0) {
@@ -109,7 +109,7 @@ export async function rotateRefreshSession(
 
 export async function revokeSessionsByToken(token: string): Promise<void> {
   const session = await prisma.refreshToken.findUnique({
-    where: { tokenHash: hashRefreshToken(token) },
+    where: { tokenHash: hashToken(token) },
     select: { userId: true },
   });
 
