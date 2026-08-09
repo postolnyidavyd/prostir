@@ -6,12 +6,14 @@ import ChevronLeftIcon from '../../assets/icons/Chevron_Left.svg?react';
 import WarningIcon from '../../assets/icons/Triangle_Warning.svg?react';
 import { toast } from '../../lib/toast';
 import { useRoomChannel } from '../../lib/useRealtime';
-import { addDays, kyivMinutesToUtc, startOfWeek, weekDays } from '../../lib/time';
+import { addDays, kyivMinutesToUtc, startOfWeek, weekDays, weekParamOf } from '../../lib/time';
+import { useActiveDay } from './useActiveDay';
 import { useRoomFilters } from './useRoomFilters';
 import { useGetRoomBookingsQuery } from '../../store/api/bookingsApi';
 import { useGetRoomsQuery } from '../../store/api/roomsApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/authSlice';
+import { media } from '../../styles/media';
 import { text } from '../../styles/typography';
 import Button from '../ui/Button';
 import EmptyState from '../ui/EmptyState';
@@ -58,12 +60,12 @@ const TopRow = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-`;
 
-function toWeekParam(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
+  ${media.phone} {
+    /* тижнем на мобілці керує перемикач днів у сітці*/
+    display: none;
+  }
+`;
 
 type RoomScheduleProps = {
   roomId: string;
@@ -87,11 +89,13 @@ function RoomSchedule({ roomId }: RoomScheduleProps) {
   // час, заданий у фільтрах списку, щоб підсвітити його в сітці й прокрутити туди
   const { filters } = useRoomFilters();
 
-  // хендлери
+  // активний день і перемикач по дняв для мобілки
+  const { activeDayIndex, goPrevDay, goNextDay } = useActiveDay(days, filters.date);
+
   const setWeek = (date: Date) =>
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      next.set('week', toWeekParam(startOfWeek(date)));
+      next.set('week', weekParamOf(date));
       return next;
     });
 
@@ -160,6 +164,9 @@ function RoomSchedule({ roomId }: RoomScheduleProps) {
         highlightFrom={filters.fromMin}
         highlightTo={filters.toMin}
         resetToken={resetToken}
+        activeDayIndex={activeDayIndex}
+        onPrevDay={goPrevDay}
+        onNextDay={goNextDay}
       />
     );
   }

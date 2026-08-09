@@ -5,19 +5,13 @@ import ArrowRightIcon from '../../assets/icons/Arrow_Right_MD.svg?react';
 import ChevronLeftIcon from '../../assets/icons/Chevron_Left.svg?react';
 import ChevronRightIcon from '../../assets/icons/Chevron_Right.svg?react';
 import FilterIcon from '../../assets/icons/Filter.svg?react';
-import {
-  MAX_DURATION_MIN,
-  SLOT_MIN,
-  WORK_END_MIN,
-  WORK_START_MIN,
-  browserGmtLabel,
-  slotLabel,
-} from '../../lib/time';
+import { browserGmtLabel } from '../../lib/time';
 import { text } from '../../styles/typography';
 import Switch from '../ui/Switch';
 import DatePicker from './DatePicker';
-import TimePicker, { type TimeOption } from './TimePicker';
+import TimePicker from './TimePicker';
 import { chipStyle } from './chipStyle';
+import { fromTimeOptions, toTimeOptions } from './timeOptions';
 
 const Bar = styled.div`
   display: flex;
@@ -150,22 +144,8 @@ function RoomsToolbar({
   onMoreFilters,
   filterCount,
 }: RoomsToolbarProps) {
-  const fromOptions = useMemo<TimeOption[]>(() => {
-    const options: TimeOption[] = [];
-    for (let m = WORK_START_MIN; m <= WORK_END_MIN - SLOT_MIN; m += SLOT_MIN) {
-      options.push({ value: m, label: slotLabel(date, m) });
-    }
-    return options;
-  }, [date]);
-
-  const toOptions = useMemo<TimeOption[]>(() => {
-    const options: TimeOption[] = [];
-    const hi = Math.min(WORK_END_MIN, fromMin + MAX_DURATION_MIN);
-    for (let m = fromMin + SLOT_MIN; m <= hi; m += SLOT_MIN) {
-      options.push({ value: m, label: slotLabel(date, m) });
-    }
-    return options;
-  }, [date, fromMin]);
+  const fromOptions = useMemo(() => fromTimeOptions(date), [date]);
+  const toOptions = useMemo(() => toTimeOptions(date, fromMin), [date, fromMin]);
 
   return (
     <Bar>

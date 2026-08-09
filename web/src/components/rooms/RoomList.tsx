@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -6,27 +6,22 @@ import FilterIcon from '../../assets/icons/Filter.svg?react';
 import SearchIcon from '../../assets/icons/Lens_Minus.svg?react';
 import WarningIcon from '../../assets/icons/Triangle_Warning.svg?react';
 import { freeWord, roomsWord } from '../../lib/plural';
-import {
-  MAX_DURATION_MIN,
-  SLOT_MIN,
-  WORK_END_MIN,
-  isSlotPast,
-  slotLabel,
-  slotToIso,
-  weekParamOf,
-} from '../../lib/time';
+import { isSlotPast, slotLabel, slotToIso, weekParamOf } from '../../lib/time';
 import {
   useGetRoomFilterOptionsQuery,
   useGetRoomsQuery,
   type RoomsQuery,
 } from '../../store/api/roomsApi';
+import { media } from '../../styles/media';
 import { text } from '../../styles/typography';
 import Button from '../ui/Button';
 import EmptyState from '../ui/EmptyState';
 import FilterDrawer from './FilterDrawer';
+import MobileFilterBar from './MobileFilterBar';
 import RoomCard from './RoomCard';
 import RoomCardSkeleton from './RoomCardSkeleton';
 import RoomsToolbar from './RoomsToolbar';
+import { clampToMin } from './timeOptions';
 import { useRoomFilters } from './useRoomFilters';
 
 const Wrap = styled.div`
@@ -50,6 +45,17 @@ const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
   gap: 1rem;
+
+  ${media.phone} {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.625rem;
+  }
+`;
+
+const DesktopToolbar = styled.div`
+  ${media.phone} {
+    display: none;
+  }
 `;
 
 const SKELETON_COUNT = 5;
@@ -58,7 +64,7 @@ const FALLBACK_MAX_CAPACITY = 20;
 function RoomList() {
   const { filters, update } = useRoomFilters();
   const { date, fromMin, toMin, onlyFree, floors: selectedFloors, minCapacity } = filters;
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<'advanced' | 'all' | null>(null);
   const [, setSearchParams] = useSearchParams();
 
   const openRoom = (id: string) =>
@@ -70,11 +76,7 @@ function RoomList() {
     });
 
   const handleFromMin = (minutes: number) =>
-    update((prev) => {
-      const min = minutes + SLOT_MIN;
-      const max = Math.min(WORK_END_MIN, minutes + MAX_DURATION_MIN);
-      return { fromMin: minutes, toMin: Math.min(Math.max(prev.toMin, min), max) };
-    });
+    update((prev) => ({ fromMin: minutes, toMin: clampToMin(minutes, prev.toMin) }));
 
   const shiftDay = (delta: number) =>
     update((prev) => {
@@ -97,6 +99,13 @@ function RoomList() {
   const isInPast = isSlotPast(date, fromMin);
   const freeCount = isInPast ? 0 : rooms.filter((room) => room.available).length;
   const filterCount = selectedFloors.length + (minCapacity > 0 ? 1 : 0);
+  const mobileFilterCount = filterCount + (onlyFree ? 1 : 0);
+
+  // стабільне посилання, щоб наш синк в дровері не скидав стан на перерендер
+  const primary = useMemo(
+    () => (drawerMode === 'all' ? { date, fromMin, toMin, onlyFree } : undefined),
+    [drawerMode, date, fromMin, toMin, onlyFree],
+  );
 
   let content;
   if (isError) {
@@ -155,19 +164,28 @@ function RoomList() {
   return (
     <Wrap>
       <Title>Бронювання</Title>
-      <RoomsToolbar
+      <DesktopToolbar>
+        <RoomsToolbar
+          date={date}
+          onDateChange={(next) => update({ date: next })}
+          onPrevDay={() => shiftDay(-1)}
+          onNextDay={() => shiftDay(1)}
+          fromMin={fromMin}
+          toMin={toMin}
+          onFromMin={handleFromMin}
+          onToMin={(minutes) => update({ toMin: minutes })}
+          onlyFree={onlyFree}
+          onOnlyFree={(value) => update({ onlyFree: value })}
+          onMoreFilters={() => setDrawerMode('advanced')}
+          filterCount={filterCount}
+        />
+      </DesktopToolbar>
+      <MobileFilterBar
         date={date}
-        onDateChange={(next) => update({ date: next })}
-        onPrevDay={() => shiftDay(-1)}
-        onNextDay={() => shiftDay(1)}
         fromMin={fromMin}
         toMin={toMin}
-        onFromMin={handleFromMin}
-        onToMin={(minutes) => update({ toMin: minutes })}
-        onlyFree={onlyFree}
-        onOnlyFree={(value) => update({ onlyFree: value })}
-        onMoreFilters={() => setDrawerOpen(true)}
-        filterCount={filterCount}
+        count={mobileFilterCount}
+        onOpen={() => setDrawerMode('all')}
       />
       {!isFetching && !isError && rooms.length > 0 && (
         <Found>
@@ -177,14 +195,15 @@ function RoomList() {
       )}
       {content}
       <FilterDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        open={drawerMode !== null}
+        onClose={() => setDrawerMode(null)}
         floors={floorOptions}
         selectedFloors={selectedFloors}
         minCapacity={minCapacity}
         maxCapacity={maxCapacity}
-        onApply={(floors, capacity) => update({ floors, minCapacity: capacity })}
+        onApply={(patch) => update(patch)}
         onReset={() => update({ floors: [], minCapacity: 0 })}
+        primary={primary}
       />
     </Wrap>
   );

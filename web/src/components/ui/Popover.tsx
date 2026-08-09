@@ -33,7 +33,18 @@ function Popover({ renderTrigger, children }: PopoverProps) {
     const updatePosition = () => {
       if (!wrapRef.current) return;
       const rect = wrapRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 6, left: rect.left });
+      const panel = panelRef.current;
+      const margin = 8;
+      const panelW = panel?.offsetWidth ?? 0;
+      const panelH = panel?.offsetHeight ?? 0;
+      // щоб панель не вилазила за край, спочатку Math.min щоб справа не вилізла а потім math max щоб зліва
+      const left = Math.max(margin, Math.min(rect.left, window.innerWidth - panelW - margin));
+      // знизу, але якщо не влазить а зверху є місце тоді зверху
+      let top = rect.bottom + 6;
+      if (panelH && top + panelH + margin > window.innerHeight && rect.top - panelH - 6 >= margin) {
+        top = rect.top - panelH - 6;
+      }
+      setPos({ top, left });
     };
 
     updatePosition();

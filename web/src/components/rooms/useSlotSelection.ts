@@ -30,7 +30,7 @@ export function useSlotSelection({ days, isFree, resetToken, onCreate }: UseSlot
   //ресетимо селектіон на зміну днів або на інкремент resetToken
   useEffect(() => setSel(null), [days, resetToken]);
 
-  // найдальший суміжний вільний слот від anchor у бік target (тобто 4 год або якщо кінець робочого дня раніше то менше, занятий і тд)
+  // найдальший суміжний вільний слот від anchor у бік target (4 год / кінець дня / зайнятий слот)
   const reachableSlot = (dayIndex: number, anchor: number, target: number): number => {
     const dir = Math.sign(target - anchor) || 1;
     let last = anchor;

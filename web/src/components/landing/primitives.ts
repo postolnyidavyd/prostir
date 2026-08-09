@@ -1,10 +1,16 @@
 import styled from 'styled-components';
 
+import { media } from '../../styles/media';
+
 export const Container = styled.div`
   width: 100%;
   max-width: 74rem;
   margin: 0 auto;
   padding: 0 2rem;
+
+  ${media.phone} {
+    padding: 0 1.25rem;
+  }
 `;
 
 export const Eyebrow = styled.p`
@@ -24,6 +30,12 @@ export const SectionHeading = styled.h2`
   line-height: 2.9375rem;
   letter-spacing: -0.054375rem;
   color: var(--primary-black);
+
+  ${media.phone} {
+    font-size: 1.9rem;
+    line-height: 2.2rem;
+    letter-spacing: -0.038rem;
+  }
 `;
 
 export const SectionSub = styled.p`
