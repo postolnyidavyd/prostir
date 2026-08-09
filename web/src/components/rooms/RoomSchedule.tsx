@@ -4,7 +4,6 @@ import styled from 'styled-components';
 
 import ChevronLeftIcon from '../../assets/icons/Chevron_Left.svg?react';
 import WarningIcon from '../../assets/icons/Triangle_Warning.svg?react';
-import { toast } from '../../lib/toast';
 import { useRoomChannel } from '../../lib/useRealtime';
 import { addDays, kyivMinutesToUtc, startOfWeek, weekDays, weekParamOf } from '../../lib/time';
 import { useActiveDay } from './useActiveDay';
@@ -159,7 +158,9 @@ function RoomSchedule({ roomId }: RoomScheduleProps) {
         bookings={bookings}
         currentUserId={currentUser?.id}
         onCreate={setDraft}
-        onCancel={(booking) => requestCancel({ id: booking.id, roomId })}
+        onCancel={(booking) =>
+          requestCancel({ id: booking.id, roomId, seriesId: booking.seriesId })
+        }
         highlightDay={filters.date}
         highlightFrom={filters.fromMin}
         highlightTo={filters.toMin}
@@ -201,7 +202,6 @@ function RoomSchedule({ roomId }: RoomScheduleProps) {
           onCreated={() => {
             setDraft(null);
             setResetToken((token) => token + 1);
-            toast.success('Бронювання створено');
           }}
           onConflict={() => {
             setDraft(null);

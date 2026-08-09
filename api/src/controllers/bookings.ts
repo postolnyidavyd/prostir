@@ -2,7 +2,12 @@ import type { RequestHandler } from 'express';
 
 import { env } from '../config/env.js';
 import { requireUserId } from '../middleware/auth-guard.js';
-import type { BookingRange, CreateBookingInput, MyBookingsQuery } from '../schemas/booking.js';
+import type {
+  BookingRange,
+  CreateBookingInput,
+  CreateSeriesInput,
+  MyBookingsQuery,
+} from '../schemas/booking.js';
 import type { IdParam } from '../schemas/common.js';
 import * as bookingsService from '../services/bookings.js';
 
@@ -38,6 +43,25 @@ export const create: RequestHandler<unknown, unknown, CreateBookingInput> = asyn
   const booking = await bookingsService.createBooking(requireUserId(req), req.body);
 
   res.status(201).json({ booking });
+};
+
+export const listMySeries: RequestHandler = async (req, res) => {
+  res.json({ series: await bookingsService.listMySeries(requireUserId(req)) });
+};
+
+export const createSeries: RequestHandler<unknown, unknown, CreateSeriesInput> = async (
+  req,
+  res,
+) => {
+  const result = await bookingsService.createSeries(requireUserId(req), req.body);
+
+  res.status(201).json(result);
+};
+
+export const cancelSeries: RequestHandler<IdParam> = async (req, res) => {
+  const canceled = await bookingsService.cancelSeries(requireUserId(req), req.params.id);
+
+  res.json({ canceled });
 };
 
 export const cancel: RequestHandler<IdParam> = async (req, res) => {

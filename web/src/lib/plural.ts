@@ -10,3 +10,5 @@ function plural(n: number, forms: [string, string, string]): string {
 export const roomsWord = (n: number) => plural(n, ['кімната', 'кімнати', 'кімнат']);
 export const freeWord = (n: number) => plural(n, ['вільна', 'вільні', 'вільних']);
 export const peopleWord = (n: number) => plural(n, ['людина', 'людини', 'людей']);
+export const weeksWord = (n: number) => plural(n, ['тиждень', 'тижні', 'тижнів']);
+export const bookingsWord = (n: number) => plural(n, ['бронювання', 'бронювання', 'бронювань']);

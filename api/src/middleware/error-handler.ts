@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
-import { AppError, ValidationError } from '../lib/errors.js';
+import { AppError, SeriesConflictError, ValidationError } from '../lib/errors.js';
 
 // express.json() кидає SyntaxError із власним полем типу, ловимо щоб не летіло в 500
 function isJsonParseError(error: unknown): boolean {
@@ -23,6 +23,11 @@ export function errorHandler(
 
   if (error instanceof ValidationError) {
     res.status(error.statusCode).json({ message: error.message, errors: error.fieldErrors });
+    return;
+  }
+
+  if (error instanceof SeriesConflictError) {
+    res.status(error.statusCode).json({ message: error.message, conflicts: error.conflicts });
     return;
   }
 

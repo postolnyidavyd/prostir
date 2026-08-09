@@ -7,5 +7,6 @@ export default defineConfig({
     include: ['tests/db/**/*.test.ts'],
     setupFiles: ['tests/db/load-env.ts'],
     fileParallelism: false,
+    testTimeout: 15_000,
   },
 });

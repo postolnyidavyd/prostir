@@ -16,3 +16,12 @@ export class ValidationError extends AppError {
     this.name = 'ValidationError';
   }
 }
+
+// частина повторень серії зайнята
+// конфлікти віддаємо клієнту для підтвердження
+export class SeriesConflictError extends AppError {
+  constructor(readonly conflicts: { startsAt: Date; endsAt: Date }[]) {
+    super(409, 'Частина тижнів уже зайнята');
+    this.name = 'SeriesConflictError';
+  }
+}

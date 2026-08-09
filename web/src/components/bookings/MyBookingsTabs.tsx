@@ -1,8 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 
-import type { BookingScope } from '../../store/api/bookingsApi';
-
 const Nav = styled.div`
   align-self: flex-start;
   position: relative;
@@ -53,15 +51,16 @@ const Count = styled.span`
   opacity: 0.55;
 `;
 
+export type TabDef = { key: string; label: string; count: number };
+
 type MyBookingsTabsProps = {
-  value: BookingScope;
-  counts: { upcoming: number; past: number };
-  onChange: (scope: BookingScope) => void;
+  tabs: TabDef[];
+  value: string;
+  onChange: (key: string) => void;
 };
 
-function MyBookingsTabs({ value, counts, onChange }: MyBookingsTabsProps) {
-  const upcomingRef = useRef<HTMLButtonElement>(null);
-  const pastRef = useRef<HTMLButtonElement>(null);
+function MyBookingsTabs({ tabs, value, onChange }: MyBookingsTabsProps) {
+  const refs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [thumb, setThumb] = useState<{
     left: number;
     top: number;
@@ -69,9 +68,10 @@ function MyBookingsTabs({ value, counts, onChange }: MyBookingsTabsProps) {
     height: number;
   }>();
 
-  // позиціюємо плашку під активним табом, бо ширина табів різна через лічильники
+  // ширина табів різна через лічильники, тож плашку міряємо від активного таба
+  const counts = tabs.map((tab) => tab.count).join();
   useLayoutEffect(() => {
-    const el = value === 'upcoming' ? upcomingRef.current : pastRef.current;
+    const el = refs.current[value];
     if (el) {
       setThumb({
         left: el.offsetLeft,
@@ -80,31 +80,26 @@ function MyBookingsTabs({ value, counts, onChange }: MyBookingsTabsProps) {
         height: el.offsetHeight,
       });
     }
-  }, [value, counts.upcoming, counts.past]);
+  }, [value, counts]);
 
   return (
     <Nav role="tablist">
       <Thumb $ready={thumb !== undefined} style={thumb} aria-hidden />
-      <Tab
-        ref={upcomingRef}
-        type="button"
-        role="tab"
-        aria-selected={value === 'upcoming'}
-        $active={value === 'upcoming'}
-        onClick={() => onChange('upcoming')}
-      >
-        Майбутні <Count>{counts.upcoming}</Count>
-      </Tab>
-      <Tab
-        ref={pastRef}
-        type="button"
-        role="tab"
-        aria-selected={value === 'past'}
-        $active={value === 'past'}
-        onClick={() => onChange('past')}
-      >
-        Минулі <Count>{counts.past}</Count>
-      </Tab>
+      {tabs.map((tab) => (
+        <Tab
+          key={tab.key}
+          ref={(el) => {
+            refs.current[tab.key] = el;
+          }}
+          type="button"
+          role="tab"
+          aria-selected={value === tab.key}
+          $active={value === tab.key}
+          onClick={() => onChange(tab.key)}
+        >
+          {tab.label} <Count>{tab.count}</Count>
+        </Tab>
+      ))}
     </Nav>
   );
 }

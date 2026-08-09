@@ -1,10 +1,22 @@
+import { randomUUID } from 'node:crypto';
+
 import { prisma } from '../db/client.js';
 import { isBookingOverlap, isForeignKeyViolation } from '../db/errors.js';
-import { AppError } from '../lib/errors.js';
+import { AppError, SeriesConflictError } from '../lib/errors.js';
 import { formatDisplayName } from '../lib/names.js';
-import { isInFuture, validateBookingInterval, type IntervalIssue } from '../lib/time.js';
+import {
+  addWeeksKyiv,
+  isInFuture,
+  validateBookingInterval,
+  type IntervalIssue,
+} from '../lib/time.js';
 import { publishRoomChange } from '../realtime/hub.js';
-import type { BookingRange, CreateBookingInput, MyBookingsQuery } from '../schemas/booking.js';
+import type {
+  BookingRange,
+  CreateBookingInput,
+  CreateSeriesInput,
+  MyBookingsQuery,
+} from '../schemas/booking.js';
 
 const INTERVAL_MESSAGES: Record<IntervalIssue, string> = {
   NOT_ALIGNED: 'Час має бути кратним 30 хвилинам',
@@ -18,6 +30,7 @@ const bookingFields = {
   title: true,
   startsAt: true,
   endsAt: true,
+  seriesId: true,
   user: { select: { id: true, firstName: true, lastName: true } },
 } as const;
 
@@ -26,6 +39,7 @@ type BookingRow = {
   title: string;
   startsAt: Date;
   endsAt: Date;
+  seriesId: string | null;
   user: { id: string; firstName: string; lastName: string };
 };
 
@@ -34,6 +48,7 @@ export type PublicBooking = {
   title: string;
   startsAt: Date;
   endsAt: Date;
+  seriesId: string | null;
   user: { id: string; displayName: string };
 };
 
@@ -43,11 +58,54 @@ function toPublicBooking(booking: BookingRow): PublicBooking {
     title: booking.title,
     startsAt: booking.startsAt,
     endsAt: booking.endsAt,
+    seriesId: booking.seriesId,
     user: {
       id: booking.user.id,
       displayName: formatDisplayName(booking.user.firstName, booking.user.lastName),
     },
   };
+}
+
+type Occurrence = { startsAt: Date; endsAt: Date };
+
+// повторення серії
+function generateOccurrences(startsAt: Date, endsAt: Date, weeks: number): Occurrence[] {
+  return Array.from({ length: weeks }, (_, i) => ({
+    startsAt: addWeeksKyiv(startsAt, i),
+    endsAt: addWeeksKyiv(endsAt, i),
+  }));
+}
+
+// зайняті повторення - лише для користувачу при створені істина, при вставці лишається за констрейнтом
+async function findBusyOccurrences(
+  roomId: string,
+  occurrences: Occurrence[],
+  windowStart: Date,
+  windowEnd: Date,
+): Promise<Occurrence[]> {
+  const existing = await prisma.booking.findMany({
+    where: { roomId, canceledAt: null, startsAt: { lt: windowEnd }, endsAt: { gt: windowStart } },
+    select: { startsAt: true, endsAt: true },
+  });
+
+  return occurrences.filter((occ) =>
+    existing.some((busy) => busy.startsAt < occ.endsAt && busy.endsAt > occ.startsAt),
+  );
+}
+
+// помилки запису бронювання, спільні для одиночного і серії
+function rethrowBookingWriteError(error: unknown): never {
+  // існування кімнати лишається за базою
+  if (isForeignKeyViolation(error, 'bookings_room_id_fkey')) {
+    throw new AppError(404, 'Кімнату не знайдено');
+  }
+
+  // юзера видалили поки його access-токен ще живий (рідкісний кейс)
+  if (isForeignKeyViolation(error, 'bookings_user_id_fkey')) {
+    throw new AppError(401, 'Сесія недійсна');
+  }
+
+  throw error;
 }
 
 export async function listRoomBookings(
@@ -81,6 +139,7 @@ const myBookingFields = {
   title: true,
   startsAt: true,
   endsAt: true,
+  seriesId: true,
   room: { select: { id: true, name: true } },
 } as const;
 
@@ -90,6 +149,7 @@ const currentBookingFields = {
   title: true,
   startsAt: true,
   endsAt: true,
+  seriesId: true,
   room: { select: { id: true, name: true, floor: true, capacity: true } },
 } as const;
 
@@ -98,6 +158,7 @@ export type MyBooking = {
   title: string;
   startsAt: Date;
   endsAt: Date;
+  seriesId: string | null;
   room: { id: string; name: string };
 };
 
@@ -106,6 +167,7 @@ export type CurrentBooking = {
   title: string;
   startsAt: Date;
   endsAt: Date;
+  seriesId: string | null;
   room: { id: string; name: string; floor: number; capacity: number };
 };
 
@@ -238,18 +300,85 @@ export async function createBooking(
       throw new AppError(409, 'Цей час щойно зайняли');
     }
 
-    // існування кімнати теж лишається за базою
-    if (isForeignKeyViolation(error, 'bookings_room_id_fkey')) {
-      throw new AppError(404, 'Кімнату не знайдено');
-    }
-
-    // юзера видалили поки його access-токен ще живий (рідскісний випадок але едж кейс)
-    if (isForeignKeyViolation(error, 'bookings_user_id_fkey')) {
-      throw new AppError(401, 'Сесія недійсна');
-    }
-
-    throw error;
+    rethrowBookingWriteError(error);
   }
+}
+
+export type SeriesResult = {
+  seriesId: string;
+  created: PublicBooking[];
+  skipped: Occurrence[];
+};
+
+// повторюване бронювання, усі букінги однієї серії ділять seriesId.
+// без allowSkips - усе або нічого, з allowSkips - бронюємо доступні, зайняті пропускаємо
+export async function createSeries(userId: string, input: CreateSeriesInput): Promise<SeriesResult> {
+  const now = new Date();
+  const occurrences = generateOccurrences(input.startsAt, input.endsAt, input.weeks);
+
+  for (const occ of occurrences) {
+    const check = validateBookingInterval(occ.startsAt, occ.endsAt, now);
+    if (!check.ok) {
+      throw new AppError(400, INTERVAL_MESSAGES[check.reason]);
+    }
+  }
+
+  const windowEnd = addWeeksKyiv(input.endsAt, input.weeks - 1);
+  const busy = await findBusyOccurrences(input.roomId, occurrences, input.startsAt, windowEnd);
+
+  // віддаємо конфлікти на підтвердження, нічого не створюємо
+  if (busy.length > 0 && !input.allowSkips) {
+    throw new SeriesConflictError(busy);
+  }
+
+  const seriesId = randomUUID();
+  const data = (occ: Occurrence) => ({
+    roomId: input.roomId,
+    userId,
+    title: input.title,
+    startsAt: occ.startsAt,
+    endsAt: occ.endsAt,
+    seriesId,
+  });
+
+  // конфліктів нема - атомарно все або нічого
+  if (!input.allowSkips) {
+    try {
+      const created = await prisma.$transaction(
+        occurrences.map((occ) => prisma.booking.create({ data: data(occ), select: bookingFields })),
+      );
+      for (const booking of created) {
+        publishRoomChange({ roomId: input.roomId, startsAt: booking.startsAt, endsAt: booking.endsAt });
+      }
+
+      return { seriesId, created: created.map(toPublicBooking), skipped: [] };
+    } catch (error) {
+      if (isBookingOverlap(error)) {
+        throw new AppError(409, 'Цей час щойно зайняли');
+      }
+      rethrowBookingWriteError(error);
+    }
+  }
+
+  // allowSkips - бронюємо по одному, зайняті пропускаємо
+  const created: PublicBooking[] = [];
+  const skipped: Occurrence[] = [];
+
+  for (const occ of occurrences) {
+    try {
+      const booking = await prisma.booking.create({ data: data(occ), select: bookingFields });
+      publishRoomChange({ roomId: input.roomId, startsAt: booking.startsAt, endsAt: booking.endsAt });
+      created.push(toPublicBooking(booking));
+    } catch (error) {
+      if (isBookingOverlap(error)) {
+        skipped.push({ startsAt: occ.startsAt, endsAt: occ.endsAt });
+        continue;
+      }
+      rethrowBookingWriteError(error);
+    }
+  }
+
+  return { seriesId, created, skipped };
 }
 
 export async function cancelBooking(userId: string, bookingId: string): Promise<void> {
@@ -282,4 +411,101 @@ export async function cancelBooking(userId: string, bookingId: string): Promise<
 
   // слот звільнився - надсилаємо сигнал
   publishRoomChange({ roomId: booking.roomId, startsAt: booking.startsAt, endsAt: booking.endsAt });
+}
+
+// скасовує всі майбутні нескасовані повторення серії
+export async function cancelSeries(userId: string, seriesId: string): Promise<number> {
+  const owner = await prisma.booking.findFirst({ where: { seriesId }, select: { userId: true } });
+
+  if (!owner) {
+    throw new AppError(404, 'Серію не знайдено');
+  }
+
+  if (owner.userId !== userId) {
+    throw new AppError(403, 'Це не ваша серія');
+  }
+
+  const now = new Date();
+  const upcoming = await prisma.booking.findMany({
+    where: { seriesId, canceledAt: null, startsAt: { gt: now } },
+    select: { id: true, roomId: true, startsAt: true, endsAt: true },
+  });
+
+  if (upcoming.length === 0) {
+    throw new AppError(409, 'Немає майбутніх бронювань серії для скасування');
+  }
+
+  await prisma.booking.updateMany({
+    where: { id: { in: upcoming.map((booking) => booking.id) }, canceledAt: null },
+    data: { canceledAt: now },
+  });
+
+  for (const booking of upcoming) {
+    publishRoomChange({ roomId: booking.roomId, startsAt: booking.startsAt, endsAt: booking.endsAt });
+  }
+
+  return upcoming.length;
+}
+
+export type SeriesSummary = {
+  seriesId: string;
+  title: string;
+  room: { id: string; name: string };
+  // для показу дня тижня й часу серії
+  startsAt: Date;
+  endsAt: Date;
+  total: number;
+  upcomingCount: number;
+  nextStartsAt: Date | null;
+};
+
+// зводить бронювання користувача в серії
+export async function listMySeries(userId: string): Promise<SeriesSummary[]> {
+  const now = new Date();
+  const rows = await prisma.booking.findMany({
+    where: { userId, seriesId: { not: null }, canceledAt: null },
+    orderBy: { startsAt: 'asc' },
+    select: {
+      seriesId: true,
+      title: true,
+      startsAt: true,
+      endsAt: true,
+      room: { select: { id: true, name: true } },
+    },
+  });
+
+  const bySeries = new Map<string, SeriesSummary>();
+
+  for (const row of rows) {
+    if (row.seriesId === null) continue;
+
+    let summary = bySeries.get(row.seriesId);
+    if (!summary) {
+      summary = {
+        seriesId: row.seriesId,
+        title: row.title,
+        room: row.room,
+        startsAt: row.startsAt,
+        endsAt: row.endsAt,
+        total: 0,
+        upcomingCount: 0,
+        nextStartsAt: null,
+      };
+      bySeries.set(row.seriesId, summary);
+    }
+
+    summary.total += 1;
+    if (row.startsAt > now) {
+      summary.upcomingCount += 1;
+      summary.nextStartsAt ??= row.startsAt;
+    }
+  }
+
+  // серії майбутні - зверху, минулі- в кінцеь
+  return [...bySeries.values()].sort((a, b) => {
+    if (a.nextStartsAt && b.nextStartsAt) return a.nextStartsAt.getTime() - b.nextStartsAt.getTime();
+    if (a.nextStartsAt) return -1;
+    if (b.nextStartsAt) return 1;
+    return b.startsAt.getTime() - a.startsAt.getTime();
+  });
 }
