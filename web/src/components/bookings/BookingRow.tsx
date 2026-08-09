@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
+import RefreshIcon from '../../assets/icons/Refresh.svg?react';
 import { formatBookingDay, formatDuration, formatTime } from '../../lib/time';
 import type { BookingScope, MyBooking } from '../../store/api/bookingsApi';
 import { media } from '../../styles/media';
@@ -107,6 +108,18 @@ const Dot = styled.span`
   color: var(--base-bright-grey);
 `;
 
+const Series = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--accent-color-deep);
+
+  svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+`;
+
 const Right = styled.div`
   display: flex;
   align-items: center;
@@ -155,6 +168,15 @@ function BookingRow({ booking, scope, onCancel }: BookingRowProps) {
             <span>{formatBookingDay(booking.startsAt)}</span>
             <Dot>•</Dot>
             <span>{formatDuration(durationMin)}</span>
+            {booking.seriesId && (
+              <>
+                <Dot>•</Dot>
+                <Series>
+                  <RefreshIcon />
+                  щотижня
+                </Series>
+              </>
+            )}
           </Meta>
         </Info>
       </Left>

@@ -1,8 +1,12 @@
+import { randomBytes } from 'node:crypto';
+
 import bcrypt from 'bcryptjs';
 
+import { env } from '../config/env.js';
 import { prisma } from '../db/client.js';
 import { isUniqueViolation } from '../db/errors.js';
 import { AppError, ValidationError } from '../lib/errors.js';
+import { hashToken } from '../lib/tokens.js';
 import type {
   ChangePasswordInput,
   LoginInput,
@@ -19,20 +23,43 @@ import {
 } from './tokens.js';
 
 const BCRYPT_ROUNDS = 12;
+const VERIFY_TOKEN_BYTES = 32;
 
 const publicUser = {
   id: true,
   email: true,
   firstName: true,
   lastName: true,
+  emailVerifiedAt: true,
 } as const;
+
+type PublicUserRow = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  emailVerifiedAt: Date | null;
+};
 
 export type PublicUser = {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
+  emailVerified: boolean;
 };
+
+// назовні віддаємо булеве emailVerified
+function toPublicUser(row: PublicUserRow): PublicUser {
+  const { emailVerifiedAt, ...rest } = row;
+  return { ...rest, emailVerified: emailVerifiedAt !== null };
+}
+
+// замість SMTP кладемо посилання підтвердження в лог сервера
+function logVerificationLink(email: string, token: string): void {
+  if (env.NODE_ENV === 'test') return;
+  console.log(`Підтвердження email для ${email}: ${env.WEB_ORIGIN}/verify-email?token=${token}`);
+}
 
 export type Session = {
   user: PublicUser;
@@ -41,6 +68,8 @@ export type Session = {
 };
 
 export async function register(input: RegisterInput, meta: SessionMeta): Promise<Session> {
+  const verifyToken = randomBytes(VERIFY_TOKEN_BYTES).toString('hex');
+
   try {
     const user = await prisma.user.create({
       data: {
@@ -48,12 +77,15 @@ export async function register(input: RegisterInput, meta: SessionMeta): Promise
         passwordHash: await bcrypt.hash(input.password, BCRYPT_ROUNDS),
         firstName: input.firstName,
         lastName: input.lastName,
+        emailVerifyTokenHash: hashToken(verifyToken),
       },
       select: publicUser,
     });
 
+    logVerificationLink(user.email, verifyToken);
+
     return {
-      user,
+      user: toPublicUser(user),
       accessToken: issueAccessToken(user.id),
       refreshToken: await createRefreshSession(user.id, meta),
     };
@@ -75,15 +107,23 @@ export async function login(input: LoginInput, meta: SessionMeta): Promise<Sessi
   }
 
   return {
-    user: {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-    },
+    user: toPublicUser(user),
     accessToken: issueAccessToken(user.id),
     refreshToken: await createRefreshSession(user.id, meta),
   };
+}
+
+// підтвердження за одноразовим токеном з листа
+// чистимо хеш, щоб посилання не спрацювало двічі
+export async function verifyEmail(token: string): Promise<void> {
+  const verified = await prisma.user.updateMany({
+    where: { emailVerifyTokenHash: hashToken(token) },
+    data: { emailVerifiedAt: new Date(), emailVerifyTokenHash: null },
+  });
+
+  if (verified.count === 0) {
+    throw new AppError(400, 'Недійсне або вже використане посилання підтвердження');
+  }
 }
 
 export async function refresh(
@@ -110,7 +150,7 @@ export async function getUser(userId: string): Promise<PublicUser> {
     throw new AppError(401, 'Сесія недійсна');
   }
 
-  return user;
+  return toPublicUser(user);
 }
 
 export async function updateProfile(
@@ -118,11 +158,13 @@ export async function updateProfile(
   input: UpdateProfileInput,
 ): Promise<PublicUser> {
   try {
-    return await prisma.user.update({
+    const user = await prisma.user.update({
       where: { id: userId },
       data: { email: input.email, firstName: input.firstName, lastName: input.lastName },
       select: publicUser,
     });
+
+    return toPublicUser(user);
   } catch (error) {
     // зайнятий email показуємо інлайн під полем
     if (isUniqueViolation(error)) {

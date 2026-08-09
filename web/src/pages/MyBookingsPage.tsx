@@ -7,6 +7,7 @@ import WarningIcon from '../assets/icons/Triangle_Warning.svg?react';
 import BookingRow from '../components/bookings/BookingRow';
 import MyBookingsTabs from '../components/bookings/MyBookingsTabs';
 import NextBookingCard from '../components/bookings/NextBookingCard';
+import SeriesCard from '../components/bookings/SeriesCard';
 import { useCancelBooking } from '../components/bookings/useCancelBooking';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
@@ -15,6 +16,7 @@ import { useNow } from '../lib/useNow';
 import {
   useGetCurrentBookingQuery,
   useGetMyBookingsInfiniteQuery,
+  useGetMySeriesQuery,
   type BookingScope,
   type MyBooking,
 } from '../store/api/bookingsApi';
@@ -72,29 +74,36 @@ const Skeleton = styled.div`
   animation: ${pulse} 1.5s ease-in-out infinite;
 `;
 
+type MyTab = 'upcoming' | 'past' | 'series';
+
 function MyBookingsPage() {
-  const [scope, setScope] = useState<BookingScope>('upcoming');
+  const [tab, setTab] = useState<MyTab>('upcoming');
   const now = useNow();
   const navigate = useNavigate();
-  const { requestCancel, dialog } = useCancelBooking();
+  const { requestCancel, requestCancelSeries, dialog } = useCancelBooking();
 
   const { data: current } = useGetCurrentBookingQuery();
   const upcoming = useGetMyBookingsInfiniteQuery('upcoming');
   const past = useGetMyBookingsInfiniteQuery('past');
+  const seriesQuery = useGetMySeriesQuery();
+  const series = seriesQuery.data ?? [];
 
-  const active = scope === 'upcoming' ? upcoming : past;
+  const scope: BookingScope = tab === 'past' ? 'past' : 'upcoming';
+  const active = tab === 'past' ? past : upcoming;
   const all = (active.data?.pages ?? []).flatMap((page) => page.bookings);
 
   // хайлайт не дублюємо в списку майбутніх
   const bookings =
     scope === 'upcoming' && current ? all.filter((booking) => booking.id !== current.id) : all;
 
-  const counts = {
-    upcoming: upcoming.data?.pages[0]?.total ?? 0,
-    past: past.data?.pages[0]?.total ?? 0,
-  };
+  const tabs = [
+    { key: 'upcoming', label: 'Майбутні', count: upcoming.data?.pages[0]?.total ?? 0 },
+    { key: 'past', label: 'Минулі', count: past.data?.pages[0]?.total ?? 0 },
+    { key: 'series', label: 'Повторювані', count: series.length },
+  ];
 
-  const cancel = (booking: MyBooking) => requestCancel({ id: booking.id, roomId: booking.room.id });
+  const cancel = (booking: MyBooking) =>
+    requestCancel({ id: booking.id, roomId: booking.room.id, seriesId: booking.seriesId });
 
   const renderRows = (items: MyBooking[]) =>
     items.map((booking) => (
@@ -106,29 +115,61 @@ function MyBookingsPage() {
       />
     ));
 
-  let content;
-  if (active.isError) {
-    content = (
-      <EmptyState
-        tone="error"
-        icon={<WarningIcon />}
-        title="Не вдалося завантажити"
-        description="Щось пішло не так. Перевір зʼєднання та спробуй ще раз."
-      >
-        <Button onClick={() => active.refetch()}>Спробувати ще раз</Button>
-      </EmptyState>
-    );
-  } else if (active.isLoading) {
-    content = (
+  const errorState = (onRetry: () => void) => (
+    <EmptyState
+      tone="error"
+      icon={<WarningIcon />}
+      title="Не вдалося завантажити"
+      description="Щось пішло не так. Перевір зʼєднання та спробуй ще раз."
+    >
+      <Button onClick={onRetry}>Спробувати ще раз</Button>
+    </EmptyState>
+  );
+
+  const renderSeries = () => {
+    if (seriesQuery.isError) return errorState(() => seriesQuery.refetch());
+    if (seriesQuery.isLoading)
+      return (
+        <Section>
+          <Skeleton />
+          <Skeleton />
+        </Section>
+      );
+    if (series.length === 0)
+      return (
+        <EmptyState
+          icon={<CalendarIcon />}
+          title="Немає повторюваних бронювань"
+          description="Увімкни «Повторювати щотижня» під час бронювання — серія зʼявиться тут."
+        >
+          <Button onClick={() => navigate('/')}>До бронювання</Button>
+        </EmptyState>
+      );
+    return (
       <Section>
-        <Skeleton />
-        <Skeleton />
-        <Skeleton />
+        {series.map((item) => (
+          <SeriesCard
+            key={item.seriesId}
+            series={item}
+            onCancel={() => requestCancelSeries({ seriesId: item.seriesId, roomId: item.room.id })}
+          />
+        ))}
       </Section>
     );
-  } else if (bookings.length === 0) {
-    content =
-      scope === 'upcoming' ? (
+  };
+
+  const renderBookings = () => {
+    if (active.isError) return errorState(() => active.refetch());
+    if (active.isLoading)
+      return (
+        <Section>
+          <Skeleton />
+          <Skeleton />
+          <Skeleton />
+        </Section>
+      );
+    if (bookings.length === 0)
+      return scope === 'upcoming' ? (
         <EmptyState
           icon={<CalendarIcon />}
           title="Немає майбутніх бронювань"
@@ -143,14 +184,18 @@ function MyBookingsPage() {
           description="Завершені бронювання зʼявляться тут після зустрічей."
         />
       );
-  } else if (scope === 'upcoming') {
-    const today = bookings.filter((booking) =>
-      isSameDay(new Date(booking.startsAt), new Date(now)),
-    );
-    const later = bookings.filter(
-      (booking) => !isSameDay(new Date(booking.startsAt), new Date(now)),
-    );
-    content = (
+    if (scope === 'past')
+      return (
+        <Section>
+          <SectionHeader>Минулі</SectionHeader>
+          {renderRows(bookings)}
+        </Section>
+      );
+
+    const isToday = (booking: MyBooking) => isSameDay(new Date(booking.startsAt), new Date(now));
+    const today = bookings.filter(isToday);
+    const later = bookings.filter((booking) => !isToday(booking));
+    return (
       <Sections>
         {today.length > 0 && (
           <Section>
@@ -166,14 +211,7 @@ function MyBookingsPage() {
         )}
       </Sections>
     );
-  } else {
-    content = (
-      <Section>
-        <SectionHeader>Минулі</SectionHeader>
-        {renderRows(bookings)}
-      </Section>
-    );
-  }
+  };
 
   return (
     <Wrap>
@@ -183,15 +221,17 @@ function MyBookingsPage() {
         <NextBookingCard
           booking={current}
           now={now}
-          onCancel={() => requestCancel({ id: current.id, roomId: current.room.id })}
+          onCancel={() =>
+            requestCancel({ id: current.id, roomId: current.room.id, seriesId: current.seriesId })
+          }
         />
       )}
 
-      <MyBookingsTabs value={scope} counts={counts} onChange={setScope} />
+      <MyBookingsTabs tabs={tabs} value={tab} onChange={(key) => setTab(key as MyTab)} />
 
-      {content}
+      {tab === 'series' ? renderSeries() : renderBookings()}
 
-      {active.hasNextPage && (
+      {tab !== 'series' && active.hasNextPage && (
         <LoadMore>
           <Button
             variant="secondary"

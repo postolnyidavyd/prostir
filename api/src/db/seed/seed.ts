@@ -34,8 +34,14 @@ async function seed(): Promise<void> {
     users.map((user) =>
       prisma.user.upsert({
         where: { email: user.email },
-        update: { firstName: user.firstName, lastName: user.lastName, passwordHash },
-        create: { ...user, passwordHash },
+        // тестові юзери одразу підтверджені, щоб бронювали без кроку верифікації
+        update: {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          passwordHash,
+          emailVerifiedAt: new Date(),
+        },
+        create: { ...user, passwordHash, emailVerifiedAt: new Date() },
       }),
     ),
   );

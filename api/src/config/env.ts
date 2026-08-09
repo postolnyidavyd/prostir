@@ -13,6 +13,8 @@ const envSchema = z.object({
   // формат 15m, 24h, 7d
   JWT_ACCESS_EXPIRES_IN: z.string().regex(/^\d+(ms|s|m|h|d)$/),
   REFRESH_TOKEN_EXPIRES_IN: z.string().regex(/^\d+(ms|s|m|h|d)$/),
+  // за скільки хвилин до кінця бронювання нагадати автору звільнити кімнату
+  NOTIFY_BEFORE_MINUTES: z.coerce.number().int().min(1).default(10),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { app } from '../../src/app.js';
 import { prisma } from '../../src/db/client.js';
@@ -37,7 +37,11 @@ async function registerUser(email: string) {
     .post('/auth/register')
     .send({ email, password: PASSWORD, firstName: 'Тест', lastName: 'Бронювань' });
 
-  return { token: response.body.accessToken as string, id: response.body.user.id as string };
+  const id = response.body.user.id as string;
+  // одразу підтверджуємо email - інакше гейт заблокує створення бронювань
+  await prisma.user.update({ where: { id }, data: { emailVerifiedAt: new Date() } });
+
+  return { token: response.body.accessToken as string, id };
 }
 
 function book(token: string, roomId: string, times: { startsAt: string; endsAt: string }) {
@@ -187,6 +191,33 @@ describe('GET /rooms', () => {
       .set('Authorization', `Bearer ${ownerToken}`);
 
     expect(response.status).toBe(400);
+  });
+});
+
+describe('гейт підтвердженого email', () => {
+  const UNVERIFIED = 'booking-unverified@gmail.com';
+
+  afterEach(async () => {
+    await prisma.user.deleteMany({ where: { email: UNVERIFIED } });
+  });
+
+  it('непідтверджений - 403, після підтвердження - 201', async () => {
+    const reg = await request(app)
+      .post('/auth/register')
+      .send({ email: UNVERIFIED, password: PASSWORD, firstName: 'Тест', lastName: 'Гейт' });
+    const token = reg.body.accessToken as string;
+
+    const blocked = await book(token, roomAId, slot(0));
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.message).toBe('Підтвердьте email, щоб бронювати');
+
+    await prisma.user.update({
+      where: { id: reg.body.user.id },
+      data: { emailVerifiedAt: new Date() },
+    });
+
+    const allowed = await book(token, roomAId, slot(0));
+    expect(allowed.status).toBe(201);
   });
 });
 

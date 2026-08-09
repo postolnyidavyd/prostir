@@ -95,7 +95,7 @@ export function formatTime(iso: string): string {
 
 // пн, 3 серпня
 export function formatBookingDay(iso: string): string {
-  return format(new Date(iso), 'eee, d MMMM', { locale: uk });
+  return format(new Date(iso), 'eeeeee, d MMMM', { locale: uk });
 }
 
 // yyyy-MM-dd дати для url параметрів
@@ -155,6 +155,21 @@ export function formatWeekRange(weekStart: Date): string {
 
 export function formatWeekday(date: Date): string {
   return format(date, 'EEEE', { locale: uk });
+}
+
+
+const WEEKLY_ADVERBS = [
+  'щонеділі',
+  'щопонеділка',
+  'щовівторка',
+  'щосереди',
+  'щочетверга',
+  'щоп’ятниці',
+  'щосуботи',
+];
+
+export function weeklyAdverb(date: Date): string {
+  return WEEKLY_ADVERBS[date.getDay()] ?? '';
 }
 
 function toKyiv(iso: string): Date {

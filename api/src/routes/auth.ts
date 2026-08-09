@@ -8,12 +8,14 @@ import {
   loginSchema,
   registerSchema,
   updateProfileSchema,
+  verifyEmailSchema,
 } from '../schemas/auth.js';
 
 export const authRouter = Router();
 
 authRouter.post('/register', validate({ body: registerSchema }), authController.register);
 authRouter.post('/login', validate({ body: loginSchema }), authController.login);
+authRouter.post('/verify-email', validate({ body: verifyEmailSchema }), authController.verifyEmail);
 authRouter.post('/refresh', authController.refresh);
 authRouter.post('/logout', authController.logout);
 authRouter.get('/me', authGuard, authController.me);

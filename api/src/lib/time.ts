@@ -1,4 +1,5 @@
-import { formatInTimeZone } from 'date-fns-tz';
+import { addWeeks } from 'date-fns';
+import { formatInTimeZone, fromZonedTime, toZonedTime } from 'date-fns-tz';
 
 const KYIV_TIME_ZONE = 'Europe/Kyiv';
 const SLOT_MINUTES = 30;
@@ -67,6 +68,11 @@ function isWithinWorkingHours(startsAt: Date, endsAt: Date): boolean {
 
 export function isInFuture(date: Date, now: Date): boolean {
   return date.getTime() > now.getTime();
+}
+
+// зсув на тижні (нормально працює з літнім і зимовим часом)
+export function addWeeksKyiv(date: Date, weeks: number): Date {
+  return fromZonedTime(addWeeks(toZonedTime(date, KYIV_TIME_ZONE), weeks), KYIV_TIME_ZONE);
 }
 
 export function validateBookingInterval(startsAt: Date, endsAt: Date, now: Date): IntervalCheck {

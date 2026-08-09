@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { app } from '../../src/app.js';
 import { prisma } from '../../src/db/client.js';
+import { hashToken } from '../../src/lib/tokens.js';
 
 const EMAIL = 'auth-test@gmail.com';
 const OTHER_EMAIL = 'auth-test-2@gmail.com';
@@ -73,6 +74,57 @@ describe('POST /auth/register', () => {
 
     expect(response.status).toBe(400);
     expect(Object.keys(response.body.errors)).toEqual(['password', 'firstName']);
+  });
+});
+
+describe('POST /auth/verify-email', () => {
+  const KNOWN_TOKEN = 'verify-raw-token';
+
+  // ставимо відомий хеш, бо сирий токен назовні не віддається, лише в лог
+  const armToken = (email = EMAIL) =>
+    prisma.user.update({
+      where: { email },
+      data: { emailVerifyTokenHash: hashToken(KNOWN_TOKEN) },
+    });
+
+  it('нова реєстрація непідтверджена', async () => {
+    const response = await request(app).post('/auth/register').send(credentials);
+
+    expect(response.body.user.emailVerified).toBe(false);
+  });
+
+  it('валідний токен підтверджує, me показує emailVerified', async () => {
+    const { accessToken } = await registerUser();
+    await armToken();
+
+    const verify = await request(app).post('/auth/verify-email').send({ token: KNOWN_TOKEN });
+    expect(verify.status).toBe(204);
+
+    const me = await request(app).get('/auth/me').set('Authorization', `Bearer ${accessToken}`);
+    expect(me.body.user.emailVerified).toBe(true);
+  });
+
+  it('те саме посилання вдруге - 400', async () => {
+    await registerUser();
+    await armToken();
+
+    await request(app).post('/auth/verify-email').send({ token: KNOWN_TOKEN });
+    const second = await request(app).post('/auth/verify-email').send({ token: KNOWN_TOKEN });
+
+    expect(second.status).toBe(400);
+  });
+
+  it('невідомий токен - 400', async () => {
+    const response = await request(app).post('/auth/verify-email').send({ token: 'nope' });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('порожній токен - 400 з полем', async () => {
+    const response = await request(app).post('/auth/verify-email').send({ token: '' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.errors.token).toBeTruthy();
   });
 });
 

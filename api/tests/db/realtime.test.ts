@@ -109,6 +109,11 @@ beforeAll(async () => {
     .post('/auth/register')
     .send({ email: USER, password: PASSWORD, firstName: 'Тест', lastName: 'Реалтайм' });
   token = registered.body.accessToken;
+  // гейт бронювання вимагає підтвердженого email
+  await prisma.user.update({
+    where: { id: registered.body.user.id },
+    data: { emailVerifiedAt: new Date() },
+  });
 
   server = createServer(app);
   attachRealtime(server);

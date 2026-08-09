@@ -5,6 +5,7 @@ import { emptyToUndefined } from './common.js';
 const MAX_RANGE_DAYS = 31;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
+const MAX_SERIES_WEEKS = 13;
 
 const utcDateTime = z.iso
   .datetime('Очікується дата в ISO з Z')
@@ -15,6 +16,17 @@ export const createBookingSchema = z.object({
   title: z.string().trim().min(1, 'Назва не може бути порожньою').max(100, 'Максимум 100 символів'),
   startsAt: utcDateTime,
   endsAt: utcDateTime,
+});
+
+// повторюване бронювання
+export const createSeriesSchema = createBookingSchema.extend({
+  weeks: z.coerce
+    .number()
+    .int()
+    .min(2, 'Мінімум 2 повторення')
+    .max(MAX_SERIES_WEEKS, `Максимум ${MAX_SERIES_WEEKS} повторень`),
+  // згода забронювати доступні тижні, коли частина зайнята
+  allowSkips: z.boolean().default(false),
 });
 
 export const bookingRangeSchema = z
@@ -42,5 +54,6 @@ export const myBookingsQuerySchema = z.object({
 });
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
+export type CreateSeriesInput = z.infer<typeof createSeriesSchema>;
 export type BookingRange = z.infer<typeof bookingRangeSchema>;
 export type MyBookingsQuery = z.infer<typeof myBookingsQuerySchema>;

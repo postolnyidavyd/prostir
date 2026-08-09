@@ -1,6 +1,7 @@
+import { formatInTimeZone } from 'date-fns-tz';
 import { describe, expect, it } from 'vitest';
 
-import { expiresAt, isInFuture, validateBookingInterval } from '../../src/lib/time.js';
+import { addWeeksKyiv, expiresAt, isInFuture, validateBookingInterval } from '../../src/lib/time.js';
 
 const NOW = new Date('2026-07-28T00:00:00Z');
 
@@ -141,6 +142,31 @@ describe('expiresAt', () => {
   it('невідомий формат - помилка', () => {
     expect(() => expiresAt(now, 'тиждень')).toThrow();
     expect(() => expiresAt(now, '7')).toThrow();
+  });
+});
+
+describe('addWeeksKyiv - зсув у стінному часі Києва', () => {
+  const kyivHm = (date: Date) => formatInTimeZone(date, 'Europe/Kyiv', 'HH:mm');
+
+  it('через осінній перехід DST зберігає локальний час', () => {
+    const before = new Date('2026-10-20T08:00:00Z');
+    const after = addWeeksKyiv(before, 1);
+
+    expect(kyivHm(before)).toBe('11:00');
+    expect(kyivHm(after)).toBe('11:00');
+    // utc б було 10:00
+    expect(after.toISOString()).toBe('2026-10-27T09:00:00.000Z');
+  });
+
+  it('нуль тижнів - той самий момент', () => {
+    const date = new Date('2026-08-03T07:00:00Z');
+    expect(addWeeksKyiv(date, 0).toISOString()).toBe(date.toISOString());
+  });
+
+  it('поза переходом - рівно +7 днів', () => {
+    expect(addWeeksKyiv(new Date('2026-08-03T07:00:00Z'), 2).toISOString()).toBe(
+      '2026-08-17T07:00:00.000Z',
+    );
   });
 });
 

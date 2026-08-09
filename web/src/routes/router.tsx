@@ -7,6 +7,7 @@ import MyBookingsPage from '../pages/MyBookingsPage';
 import ProfilePage from '../pages/ProfilePage';
 import RegisterPage from '../pages/RegisterPage';
 import RoomsPage from '../pages/RoomsPage';
+import VerifyEmailPage from '../pages/VerifyEmailPage';
 import AuthGate from './AuthGate';
 import PublicOnly from './PublicOnly';
 import RequireAuth from './RequireAuth';
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
           { path: '/register', element: <RegisterPage /> },
         ],
       },
+      { path: '/verify-email', element: <VerifyEmailPage /> },
       {
         element: <RequireAuth />,
         children: [

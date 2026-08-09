@@ -7,6 +7,7 @@ import type {
   LoginInput,
   RegisterInput,
   UpdateProfileInput,
+  VerifyEmailInput,
 } from '../schemas/auth.js';
 import * as authService from '../services/auth.js';
 import { refreshTokenExpiresAt, type SessionMeta } from '../services/tokens.js';
@@ -57,6 +58,12 @@ export const logout: RequestHandler = async (req, res) => {
   await authService.logout(req.cookies[REFRESH_COOKIE]);
 
   res.clearCookie(REFRESH_COOKIE, cookieOptions());
+  res.status(204).end();
+};
+
+export const verifyEmail: RequestHandler<unknown, unknown, VerifyEmailInput> = async (req, res) => {
+  await authService.verifyEmail(req.body.token);
+
   res.status(204).end();
 };
 
